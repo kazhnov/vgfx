@@ -1,4 +1,5 @@
 #include "include/vmath/vmath.h"
+#include "include/vcolor/vcolor.h"
 #include <stdbool.h>
 #include <stdint.h>
 

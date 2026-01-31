@@ -12,11 +12,11 @@ static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 void iVG_SetColor(float *color);
 
 void VG_GetBackgroundColor(float* out) {
-    VM2_Copy(out, background_color);
+    VRGBA_Copy(out, background_color);
 }
 
 void VG_SetBackgroundColor(float* in) {
-    VM2_Copy(background_color, in);
+    VRGBA_Copy(background_color, in);
 }
 
 void VG_PollEvents() {
