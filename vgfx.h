@@ -48,6 +48,10 @@ void VG_DrawCircle(float* pos, float r, float* color);
 
 void VG_FillCircle(float* pos, float r, float* color);
 
+void VG_DrawLine(float* from, float* to, float* color);
+
+void VG_DrawLines(float* lines, uint32_t amount, float* color);
+
 void VG_ClearScreen(float* color);
 
 void VG_ClearBackground();

@@ -146,6 +146,21 @@ void VG_FillCircle(float *pos, float r, float* color) {
     VG_FillPolygon(pos, r, 0, 32, color);
 }
 
+
+void VG_DrawLine(float* from, float* to, float* color) {
+    iVG_ColorSet(color);
+    SDL_RenderLine(renderer,
+		   from[0], from[1],
+		   to[0], to[1]);
+}
+
+void VG_DrawLines(float* points, uint32_t amount, float* color) {
+    iVG_ColorSet(color);
+    for (int i = 0; i < amount - 2; i += 2) {
+	SDL_RenderLine(renderer, points[i], points[i+1], points[i+2], points[i+3]);
+    }
+}
+
 void VG_ClearBackground() {
     VG_ClearScreen(background_color);
 }
