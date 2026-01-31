@@ -1,3 +1,6 @@
 [submodule "include/vmath"]
 	path = include/vmath
 	url = https://github.com/kazhnov/vmath
+[submodule "include/vcolor"]
+	path = include/vcolor
+	url = git@github.com:kazhnov/vcolor.git
