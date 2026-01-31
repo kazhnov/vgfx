@@ -94,7 +94,7 @@ void VG_DrawRect(float* pos, float* size, float* color);
 void VG_FillRect(float* pos, float* size, float* color) {
     SDL_FRect rect = iVG_GetFRect(pos, size);
     iVG_SetColor(color);
-    SDL_RenderFillRectF(renderer, &rect);
+    SDL_RenderFillRect(renderer, &rect);
 }
 
 void VG_DrawCircle(float* pos, float r, float* color);
