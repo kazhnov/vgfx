@@ -80,10 +80,12 @@ bool VG_WindowShouldClose() {
 }
 
 bool VG_IsKeyPressed(uint64_t key) {
-    
+    return keys[key];
 }
 
-bool VG_IsKeyDown(uint64_t key);
+bool VG_IsKeyDown(uint64_t key) {
+    return keys[key];
+}
 
 void VG_DrawingBegin() {
     VG_UpdateWindowSize();
@@ -98,8 +100,6 @@ void VG_DrawingEnd() {
 SDL_FRect iVG_GetFRect(float* pos, float* size) {
     return (SDL_FRect){.x = pos[0], .y = pos[1], .w = size[0], .h = size[1]};
 }
-
-
 
 void VG_FillRect(float* pos, float* size, float* color) {
     SDL_FRect rect = iVG_GetFRect(pos, size);
@@ -135,11 +135,6 @@ void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* col
 	verts[3*i+1] = iVG_VertexColored(center, color);
 	verts[3*i+2] = iVG_VertexColored(prev,   color);
 	angle += 2*3.1415926535f/sides;
-	SDL_Log("new vertex\n"
-		"now:    %f:%f\n"
-		"center: %f:%f\n"
-		"prev:   %f:%f"
-		, now[0], now[1], center[0], center[1], prev[0], prev[1]);
 	VM2_Copy(prev, now);
     }
 

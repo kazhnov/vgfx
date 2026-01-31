@@ -15,6 +15,7 @@ void VG_RenderFlush();
 
 
 void VG_GetBackgroundColor(float* out);
+
 void VG_SetBackgroundColor(float* in);
 
 
@@ -50,6 +51,3 @@ void VG_FillCircle(float* pos, float r, float* color);
 void VG_ClearScreen(float* color);
 
 void VG_ClearBackground();
-
-
-
