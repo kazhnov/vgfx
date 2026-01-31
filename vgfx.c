@@ -2,10 +2,10 @@
 #include <SDL3/SDL.h>
 #include <stdlib.h>
 
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
-uint32_t window_flags;
-bool _window_should_close;
+static SDL_Window *window = NULL;
+static SDL_Renderer *renderer = NULL;
+static uint32_t window_flags;
+static bool _window_should_close;
 
 void VG_PollEvents() {
     SDL_Event event;
@@ -74,4 +74,8 @@ void VG_FillCircle(float* pos, float r, float* color);
 
 void VG_ClearBackground(float* color) {
     SDL_SetRenderDrawColorFloat(renderer, color[0], color[1], color[2], color[3]);
+}
+
+void VG_RenderFlush() {
+    SDL_RenderPresent(renderer);
 }
