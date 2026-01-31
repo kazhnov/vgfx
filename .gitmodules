@@ -1,0 +1,3 @@
+[submodule "include/vmath"]
+	path = include/vmath
+	url = https://github.com/kazhnov/vmath
