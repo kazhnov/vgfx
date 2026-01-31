@@ -118,20 +118,28 @@ void VG_FillRectCentered(float* pos, float* size, float* color) {
 void VG_DrawCircle(float* pos, float r, float* color);
 
 void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* color) {
-    SDL_Vertex verts[3*sides];
-    float prev[2], now[2];
-    prev[0] = pos[0] + cosf(angle - 2*3.1415926535f/sides) * r;
-    prev[1] = pos[1] + sinf(angle - 2*3.1415926535f/sides) * r;
+    if (sides < 3) return;
     float center[2];
     VM2_Copy(center, pos);
+
+    SDL_Vertex verts[3*sides];
+    float prev[2], now[2];
+    
+    prev[0] = center[0] + cosf(angle - 2*3.1415926535f/sides) * r;
+    prev[1] = center[1] + sinf(angle - 2*3.1415926535f/sides) * r;
     
     for (int i = 0; i < sides; i++) {
-	now[0] = pos[0] + cosf(angle) * r;
-	now[0] = pos[1] + sinf(angle) * r;
+	now[0] = center[0] + cosf(angle) * r;
+	now[0] = center[1] + sinf(angle) * r;
 	verts[3*i]   = iVG_VertexColored(now,    color);
 	verts[3*i+1] = iVG_VertexColored(center, color);
 	verts[3*i+2] = iVG_VertexColored(prev,   color);
 	angle += 2*3.1415926535f/sides;
+	SDL_Log("new vertex\n"
+		"now:    %f\n"
+		"center: %f\n"
+		"prev:   %f"
+		, now, center, prev);
 	VM2_Copy(prev, now);
     }
 
