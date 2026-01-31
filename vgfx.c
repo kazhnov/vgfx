@@ -145,6 +145,7 @@ void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* col
 
     iVG_ColorSet(color);
     SDL_RenderGeometry(renderer, NULL, verts, ARRLEN(verts), NULL, 0);
+    exit(0);
 }
 
 void VG_FillCircle(float *pos, float r, float* color) {
