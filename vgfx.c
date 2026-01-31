@@ -1,15 +1,21 @@
 #include "vgfx.h"
 #include <SDL3/SDL.h>
 #include <stdlib.h>
+#include <math.h>
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static uint32_t window_flags;
 static bool _window_should_close;
 static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+const bool *keys;
 
-
-void iVG_SetColor(float *color);
+void iVG_ColorSet(float *color);
+void iVG_KeysUpdate();
+SDL_FPoint iVG_FPoint2(float* point);
+SDL_FColor iVG_FColor4(float* color);
+SDL_Vertex iVG_Vertex(float* point, float* color, float* texcoord);
+SDL_Vertex iVG_VertexColored(float* point, float* color);
 
 void VG_GetBackgroundColor(float* out) {
     VRGBA_Copy(out, background_color);
@@ -20,6 +26,7 @@ void VG_SetBackgroundColor(float* in) {
 }
 
 void VG_PollEvents() {
+    iVG_KeysUpdate();
     SDL_Event event;
     while(SDL_PollEvent(&event)) {
 	switch (event.type) {
@@ -69,7 +76,9 @@ bool VG_WindowShouldClose() {
     return _window_should_close;
 }
 
-bool VG_IsKeyPressed(uint64_t key);
+bool VG_IsKeyPressed(uint64_t key) {
+    
+}
 
 bool VG_IsKeyDown(uint64_t key);
 
@@ -107,18 +116,42 @@ void VG_FillRectCentered(float* pos, float* size, float* color) {
 
 void VG_DrawCircle(float* pos, float r, float* color);
 
-void VG_FillCircle(float* pos, float r, float* color);
+void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* color) {
+    SDL_Vertex verts[3*sides];
+    float prev[2], now[2];
+    prev[0] = pos[0] + cosf(angle - 2*3.1415926535f/sides) * r;
+    prev[1] = pos[1] + sing(angle - 2*3.1415926535f/sides) * r;
+    float center[2];
+    VM2_Copy(center, pos);
+    
+    for (int i = 0; i < sides; i++) {
+	now[0] = pos[0] + cosf(angle) * r;
+	bow[0] = pos[1] + sinf(angle) * r;
+	verts[3*i]   = iVG_VertexColored(now,    color);
+	verts[3*i+1] = iVG_VertexColored(center, color);
+	verts[3*i+2] = iVG_VertexColored(prev,   color);
+	angle += 2*3.1415926535f/sides;
+	prevx = x; prevy = y;
+    }
+
+    iVG_ColorSet(color);
+    SDL_RenderGeometry(renderer, NULL, verts, ARRLEN(verts), NULL, 0);
+}
+
+void VG_FillCircle(float *pos, float r, float* color) {
+    VG_FillPolygon(pos, r, 0, 32, color);
+}
 
 void VG_ClearBackground() {
     VG_ClearScreen(background_color);
 }
 
-void iVG_SetColor(float *color) {
+void iVG_ColorSet(float *color) {
     SDL_SetRenderDrawColorFloat(renderer, color[0], color[1], color[2], color[3]);
 }
 
 void VG_ClearScreen(float* color) {
-    iVG_SetColor(color);
+    iVG_ColorSet(color);
     SDL_RenderClear(renderer);    
 }
 
@@ -126,3 +159,29 @@ void VG_RenderFlush() {
     SDL_RenderPresent(renderer);
 }
 
+const bool *VG_GetKeys(uint32_t *number_of_keys) {
+    return SDL_GetKeyboardState(number_of_keys);
+}
+
+void iVG_KeysUpdate() {
+    keys = VG_GetKeys(NULL);
+}
+
+SDL_FPoint iVG_FPoint2(float* point) {
+    return (SDL_FPoint){ point[0], point[1] };
+}
+
+SDL_FColor iVG_FColor4(float* color) {
+    return (SDL_FColor){ color[0], color[1], color[2], color[3] };
+}
+
+SDL_Vertex iVG_Vertex(float* point, float* color, float* tex_coord) {
+    SDL_Vertex vertex;
+    vertex.position = iVG_FPoint2(point);
+    vertex.color = iVG_FColor4(color);
+    vertex.tex_coord = iVG_FPoint2(tex_coord);
+}
+
+SDL_Vertex iVG_VertexColored(float* point, float* color) {
+    iVG_Vertex(point, color, VM2_ZERO);
+}

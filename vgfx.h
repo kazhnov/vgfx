@@ -32,10 +32,12 @@ bool VG_IsKeyPressed(uint64_t key);
 
 bool VG_IsKeyDown(uint64_t key);
 
-uint64_t *VG_GetKeys();
+const bool *VG_GetKeys(uint32_t *number_of_keys) {
 
 
 void VG_DrawRect(float* pos, float* size, float* color);
+
+void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* color);
 
 void VG_FillRect(float* pos, float* size, float* color);
 
@@ -48,4 +50,6 @@ void VG_FillCircle(float* pos, float r, float* color);
 void VG_ClearScreen(float* color);
 
 void VG_ClearBackground();
+
+
 
