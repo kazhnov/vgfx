@@ -44,4 +44,5 @@ void VG_FillCircle(float* pos, float r, float* color);
 
 void VG_ClearScreen(float* color);
 
+void VG_ClearBackground();
 

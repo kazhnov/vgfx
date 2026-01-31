@@ -8,6 +8,9 @@ static uint32_t window_flags;
 static bool _window_should_close;
 static float[4] background_color = {0.0f, 0.0f, 0.0f, 1.0f};
 
+
+void iVG_SetColor(float *color);
+
 void VG_GetBackgroundColor(float* out) {
     VM2_Copy(out, background_color);
 }
@@ -90,11 +93,20 @@ void VG_DrawCircle(float* pos, float r, float* color);
 
 void VG_FillCircle(float* pos, float r, float* color);
 
-void VG_ClearBackground(float* color) {
+void VG_ClearBackground() {
+    VG_ClearScreen(background_color);
+}
+
+void iVG_SetColor(float *color) {
     SDL_SetRenderDrawColorFloat(renderer, color[0], color[1], color[2], color[3]);
-    SDL_RenderClear(renderer);
+}
+
+void VG_ClearScreen(float* color) {
+    iVG_SetColor(color);
+    SDL_RenderClear(renderer);    
 }
 
 void VG_RenderFlush() {
     SDL_RenderPresent(renderer);
 }
+
