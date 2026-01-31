@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
+
+
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static uint32_t window_flags;
@@ -96,11 +99,11 @@ SDL_FRect iVG_GetFRect(float* pos, float* size) {
     return (SDL_FRect){.x = pos[0], .y = pos[1], .w = size[0], .h = size[1]};
 }
 
-void VG_DrawRect(float* pos, float* size, float* color);
+
 
 void VG_FillRect(float* pos, float* size, float* color) {
     SDL_FRect rect = iVG_GetFRect(pos, size);
-    iVG_SetColor(color);
+    iVG_ColorSet(color);
     SDL_RenderFillRect(renderer, &rect);
 }
 
@@ -118,18 +121,18 @@ void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* col
     SDL_Vertex verts[3*sides];
     float prev[2], now[2];
     prev[0] = pos[0] + cosf(angle - 2*3.1415926535f/sides) * r;
-    prev[1] = pos[1] + sing(angle - 2*3.1415926535f/sides) * r;
+    prev[1] = pos[1] + sinf(angle - 2*3.1415926535f/sides) * r;
     float center[2];
     VM2_Copy(center, pos);
     
     for (int i = 0; i < sides; i++) {
 	now[0] = pos[0] + cosf(angle) * r;
-	bow[0] = pos[1] + sinf(angle) * r;
+	now[0] = pos[1] + sinf(angle) * r;
 	verts[3*i]   = iVG_VertexColored(now,    color);
 	verts[3*i+1] = iVG_VertexColored(center, color);
 	verts[3*i+2] = iVG_VertexColored(prev,   color);
 	angle += 2*3.1415926535f/sides;
-	prevx = x; prevy = y;
+	VM2_Copy(prev, now);
     }
 
     iVG_ColorSet(color);
