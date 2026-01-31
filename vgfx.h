@@ -13,6 +13,10 @@ bool VG_WindowShouldClose();
 void VG_RenderFlush();
 
 
+void VG_GetBackgroundColor(float* out);
+void VG_SetBackgroundColor(float* in);
+
+
 void VG_GetWindowSize(float* out);
 
 
@@ -38,6 +42,6 @@ void VG_DrawCircle(float* pos, float r, float* color);
 
 void VG_FillCircle(float* pos, float r, float* color);
 
-void VG_ClearBackground(float* color);
+void VG_ClearScreen(float* color);
 
 

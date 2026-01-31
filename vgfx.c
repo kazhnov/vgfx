@@ -6,6 +6,15 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static uint32_t window_flags;
 static bool _window_should_close;
+static float[4] background_color = {0.0f, 0.0f, 0.0f, 1.0f};
+
+void VG_GetBackgroundColor(float* out) {
+    VM2_Copy(out, background_color);
+}
+
+void VG_SetBackgroundColor(float* in) {
+    VM2_Copy(background_color, out);
+}
 
 void VG_PollEvents() {
     SDL_Event event;
@@ -66,6 +75,7 @@ uint64_t *VG_GetKeys();
 void VG_DrawingBegin() {
     VG_UpdateWindowSize();
     VG_PollEvents();
+    VG_ClearScreen(background_color);
 }
 
 void VG_DrawingEnd() {
