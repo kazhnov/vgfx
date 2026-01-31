@@ -181,8 +181,9 @@ SDL_Vertex iVG_Vertex(float* point, float* color, float* tex_coord) {
     vertex.position = iVG_FPoint2(point);
     vertex.color = iVG_FColor4(color);
     vertex.tex_coord = iVG_FPoint2(tex_coord);
+    return vertex;
 }
 
 SDL_Vertex iVG_VertexColored(float* point, float* color) {
-    iVG_Vertex(point, color, VM2_ZERO);
+    return iVG_Vertex(point, color, VM2_ZERO);
 }
