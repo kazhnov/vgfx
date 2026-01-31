@@ -97,6 +97,14 @@ void VG_FillRect(float* pos, float* size, float* color) {
     SDL_RenderFillRect(renderer, &rect);
 }
 
+void VG_FillRectCentered(float* pos, float* size, float* color) {
+    float realpos[2];
+    float half[2];
+    VM2_ScaleO(size, 0.5, half);
+    VM2_SubO(pos, half, realpos);
+    VG_FillRect(realpos, size, color);
+}
+
 void VG_DrawCircle(float* pos, float r, float* color);
 
 void VG_FillCircle(float* pos, float r, float* color);

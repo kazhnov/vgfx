@@ -39,6 +39,8 @@ void VG_DrawRect(float* pos, float* size, float* color);
 
 void VG_FillRect(float* pos, float* size, float* color);
 
+void VG_FillRectCentered(float* pos, float* size, float* color);
+
 void VG_DrawCircle(float* pos, float r, float* color);
 
 void VG_FillCircle(float* pos, float r, float* color);
