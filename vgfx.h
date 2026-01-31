@@ -15,6 +15,11 @@ void VG_RenderFlush();
 
 void VG_GetWindowSize(float* out);
 
+
+void VG_DrawingBegin();
+
+void VG_DrawingEnd();
+
 void VG_UpdateWindowSize();
 
 

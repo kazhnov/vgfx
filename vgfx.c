@@ -63,6 +63,14 @@ bool VG_IsKeyDown(uint64_t key);
 
 uint64_t *VG_GetKeys();
 
+void VG_DrawingBegin() {
+    VG_UpdateWindowSize();
+    VG_PollEvents();
+}
+
+void VG_DrawingEnd() {
+    VG_RenderFlush();
+}
 
 void VG_DrawRect(float* pos, float* size, float* color);
 
