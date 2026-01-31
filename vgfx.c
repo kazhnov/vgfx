@@ -16,7 +16,7 @@ void VG_GetBackgroundColor(float* out) {
 }
 
 void VG_SetBackgroundColor(float* in) {
-    VM2_Copy(background_color, out);
+    VM2_Copy(background_color, in);
 }
 
 void VG_PollEvents() {
