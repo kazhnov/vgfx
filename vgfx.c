@@ -82,6 +82,7 @@ void VG_FillCircle(float* pos, float r, float* color);
 
 void VG_ClearBackground(float* color) {
     SDL_SetRenderDrawColorFloat(renderer, color[0], color[1], color[2], color[3]);
+    SDL_RenderClear(renderer);
 }
 
 void VG_RenderFlush() {
