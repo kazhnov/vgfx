@@ -130,7 +130,7 @@ void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* col
     
     for (int i = 0; i < sides; i++) {
 	now[0] = center[0] + cosf(angle) * r;
-	now[0] = center[1] + sinf(angle) * r;
+	now[1] = center[1] + sinf(angle) * r;
 	verts[3*i]   = iVG_VertexColored(now,    color);
 	verts[3*i+1] = iVG_VertexColored(center, color);
 	verts[3*i+2] = iVG_VertexColored(prev,   color);
