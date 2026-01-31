@@ -10,7 +10,7 @@ void VG_SetFlags(uint32_t flags);
 
 bool VG_WindowShouldClose();
 
-bool VG_RenderFlush();
+void VG_RenderFlush();
 
 
 void VG_GetWindowSize(float* out);
