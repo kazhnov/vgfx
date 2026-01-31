@@ -6,7 +6,7 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static uint32_t window_flags;
 static bool _window_should_close;
-static float[4] background_color = {0.0f, 0.0f, 0.0f, 1.0f};
+static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
 
 void iVG_SetColor(float *color);
