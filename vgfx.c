@@ -157,9 +157,9 @@ void VG_RenderFlush() {
     SDL_RenderPresent(renderer);
 }
 
-const bool *VG_GetKeys(int *number_of_keys) {
-    return SDL_GetKeyboardState(number_of_keys);
-}
+//const bool *VG_GetKeys(int *number_of_keys) {
+//    return SDL_GetKeyboardState(number_of_keys);
+//}
 
 void iVG_KeysUpdate() {
     keys = VG_GetKeys(NULL);
