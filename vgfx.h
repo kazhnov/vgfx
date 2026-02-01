@@ -33,7 +33,7 @@ bool VG_IsKeyPressed(uint64_t key);
 
 bool VG_IsKeyDown(uint64_t key);
 
-const bool *VG_GetKeys(uint32_t *number_of_keys);
+const uint8_t *VG_GetKeys(uint32_t *number_of_keys);
 
 
 void VG_DrawRect(float* pos, float* size, float* color);
