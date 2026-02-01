@@ -4,6 +4,7 @@
 #include <GL/gl.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
 
@@ -16,7 +17,9 @@ static bool _window_should_close;
 static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 const uint8_t *keys;
 static float window_size[2];
+static bool is_running;
 
+void iVG_RenderFlush();
 void iVG_ColorSet(float *color);
 void iVG_KeysUpdate();
 SDL_FPoint iVG_FPoint2(float* point);
@@ -34,96 +37,60 @@ void VG_SetBackgroundColor(float* in) {
     VRGBA_Copy(background_color, in);
 }
 
-void VG_PollEvents() {
+void VG_Events() {
     iVG_KeysUpdate();
     SDL_Event event;
     while(SDL_PollEvent(&event)) {
 	switch (event.type) {
-	    case SDL_QUIT:
-		_window_should_close = true;
-	    }
+	case SDL_QUIT:
+	    _window_should_close = true;
+	    break;
+	}
     }
 }
 
-void VG_InitWindow(char* name, float* size, uint32_t flags) {
-//    SDL_SetAppMetadata(name, "0.1", name);
-    SDL_SetWindowTitle(window, name);
+void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     VM2_Copy(window_size, size);
-    
-
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-	SDL_Log("Couldn't initialize SDL video: %s", SDL_GetError());
-	exit(1);
-    }
-
-    window = SDL_CreateWindow(name,
-		     SDL_WINDOWPOS_UNDEFINED,
-		     SDL_WINDOWPOS_UNDEFINED,
-		     size[0], size[1],
-		     flags | SDL_WINDOW_SHOWN);
-
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    
-    if (!window) {
-	SDL_Log("Couldn't create window: %s", SDL_GetError());
-    }
-
+    flags |= SDL_WINDOW_OPENGL;
+   
+    window = SDL_CreateWindow(name, 0, 0, window_size[0], window_size[1], flags);
+    assert(window);
 
     glcontext = SDL_GL_CreateContext(window);
-    
-    VG_SetFlags(flags);
-    VG_UpdateWindowSize();
-    iVG_SetupOpengl();
+    is_running = 1;
 }
 
-void VG_GetWindowSize(float* out) {
+void VG_WindowSizeGet(float* out) {
     VM2_Copy(out, window_size);
 }
 
-void VG_UpdateWindowSize() {
-    VG_GetWindowSize(window_size);
+void VG_WindowSizeUpdate() {
+    VG_WindowSizeGet(window_size);
     glViewport(0, 0, window_size[0], window_size[1]);
-//    SDL_SetRenderLogicalPresentation(renderer, size[0], size[1], SDL_LOGICAL_PRESENTATION_LETTERBOX);    
-}
-
-void VG_SetFlags(uint32_t flags) {
-    window_flags = flags;
-    if (window_flags & VG_WINDOW_FLAG_VSYNC) {
-//	SDL_SetRenderVSync(renderer, SDL_RENDERER_VSYNC_ADAPTIVE);
-	SDL_GL_SetSwapInterval(1);
-    }    
 }
 
 bool VG_WindowShouldClose() {
     return _window_should_close;
 }
 
-bool VG_IsKeyPressed(uint64_t key) {
+bool VG_KeyPressed(uint64_t key) {
     return keys[key];
 }
 
-bool VG_IsKeyDown(uint64_t key) {
+bool VG_KeyDown(uint64_t key) {
     return keys[key];
 }
 
 void VG_DrawingBegin() {
-    VG_UpdateWindowSize();
-    VG_PollEvents();
-    VG_ClearScreen(background_color);
+    VG_Clear(background_color);
 }
 
 void VG_DrawingEnd() {
-    VG_RenderFlush();
-}
-
-SDL_FRect iVG_GetFRect(float* pos, float* size) {
-    return (SDL_FRect){.x = pos[0], .y = pos[1], .w = size[0], .h = size[1]};
+    iVG_RenderFlush();
 }
 
 void VG_FillRect(float* pos, float* size, float* color) {
-    SDL_FRect rect = iVG_GetFRect(pos, size);
     iVG_ColorSet(color);
-//    SDL_RenderFillRect(renderer, &rect);
     iVG_GLFillRect(pos, size, color);
 }
 
@@ -182,12 +149,11 @@ void VG_DrawLines(float* points, uint32_t amount, float* color) {
 }
 
 void VG_ClearBackground() {
-    VG_ClearScreen(background_color);
+    VG_Clear(background_color);
 }
 
 void iVG_ColorSet(float *color) {
     glColor4f(color[0], color[1], color[2], color[3]);
-//    SDL_SetRenderDrawColorFloat(renderer, color[0], color[1], color[2], color[3]);
 }
 
 void VG_ClearScreen(float* color) {
@@ -197,10 +163,11 @@ void VG_ClearScreen(float* color) {
     //SDL_RenderClear(renderer);    
 }
 
-void VG_RenderFlush() {
-//    SDL_RenderPresent(renderer);
+void iVG_RenderFlush() {
     SDL_GL_SwapWindow(window);
 }
+
+
 
 const Uint8 *VG_GetKeys(uint32_t *number_of_keys) {
     return SDL_GetKeyboardState(number_of_keys);
@@ -241,5 +208,4 @@ void iVG_SetupOpengl() {
 
 void iVG_GLFillRect(float* pos, float* size, float* color) {
     iVG_ColorSet(color);
-//    glRectf(pos[0], pos[1], pos[0]+size[0], pos[1]+size[1]);
 }
