@@ -51,7 +51,7 @@ void VG_InitWindow(char* name, float* size, uint32_t flags) {
     VM2_Copy(window_size, size);
     
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 	SDL_Log("Couldn't initialize SDL video: %s", SDL_GetError());
 	exit(1);
     }
