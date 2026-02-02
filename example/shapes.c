@@ -14,7 +14,7 @@ int main() {
 	VG_WindowSizeGet(size);
 	VM2_Set(center, 0.4, 0.4);
 	
-	VG_FillRect(center, (float[]){.2f, .2f}, VRGBA_BLACK);
+	VG_FillRect(center, (float[]){.2f, .2f}, VRGBA_YELLOW);
 	VG_DrawingEnd();
     }
 

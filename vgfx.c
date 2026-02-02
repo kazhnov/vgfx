@@ -19,8 +19,10 @@ const char* vertex_shader_source = "                     \n"
     "#version 330 core                                   \n"
     "layout (location = 0) in vec2 aPos;                 \n"
     "layout (location = 1) in vec4 aColor;               \n"
+    "out vec4 bColor;                                    \n"
     "void main()                                         \n"
     "{                                                   \n"
+    "    bColor = aColor;                                \n"
     "    gl_Position = vec4(aPos.x, aPos.y, 1.f, 1.f);   \n"
     "}                                                   \0";
 
@@ -28,10 +30,10 @@ const char* vertex_shader_source = "                     \n"
 const char* fragment_shader_source = "            \n"
     "#version 330 core                            \n"
     "out vec4 FragColor;                          \n"
-    "in vec4 aColor;                              \n"
+    "in vec4 bColor;                              \n"
     "void main()                                  \n"
     "{                                            \n"
-    "    FragColor = aColor;                      \n"
+    "    FragColor = bColor;                      \n"
     "}                                            \0";
 
 void iVG_RenderFlush();
@@ -220,24 +222,6 @@ void iVG_SetupOpengl() {
     glViewport(0, 0, window_size[0], window_size[1]);
 }
 
-void iVG_GLBufferData(float* vertices, uint32_t amount, uint32_t flags) {
-    uint32_t dims = 2;
-    uint32_t colors = 0;
-    uint32_t stride = dims+colors;
-    
-    VBO_t VBO;
-    glGenBuffers(1, &VBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, amount*sizeof(float), vertices, GL_STATIC_DRAW);
-    
-    glVertexAttribPointer(0, dims,   GL_FLOAT, GL_FALSE, stride*sizeof(float), (void*)(0));
-    glEnableVertexAttribArray(0);
-//    glVertexAttribPointer(1, colors, GL_FLOAT, GL_FALSE, stride*sizeof(float), (void*)(dims*sizeof(float)));
-//    glEnableVertexAttribArray(1);
-    
-    glBindBuffer(GL_ARRAY_BUFFER,   0);
-}
 
 void iVG_GLDrawTriangles(uint32_t amount) {
     glDrawArrays(GL_TRIANGLES, 0, 3*amount);
@@ -261,6 +245,30 @@ uint32_t iVG_GLVertexArrayDestroy(uint32_t VAO) {
     glDeleteVertexArrays(1, &VAO);
 }
 
+
+const uint32_t dims = 2;
+const uint32_t colors = 4;
+const uint32_t vert_size = dims+colors;
+
+void iVG_GLBufferData(float* vertices, uint32_t arr_size, uint32_t flags) {
+    uint32_t VBO;
+    glGenBuffers(1, &VBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, arr_size, vertices, GL_STATIC_DRAW);
+
+    uint32_t offset = 0;
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, vert_size*sizeof(float), (void*)(offset*sizeof(float)));
+    glEnableVertexAttribArray(0);
+    offset += dims;
+
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, vert_size*sizeof(float), (void*)(offset*sizeof(float)));
+    glEnableVertexAttribArray(1);
+    offset += colors;
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 void iVG_GLFillRect(float* pos, float* size, float* color) {
     float vertices[] =
 	{
@@ -272,28 +280,16 @@ void iVG_GLFillRect(float* pos, float* size, float* color) {
 	    pos[0] + size[0], pos[1] + size[1], color[0], color[1], color[2], color[3],
 	    pos[0] + size[0], pos[1],           color[0], color[1], color[2], color[3],
         };
+    
+    uint32_t VAO = iVG_GLVertexArrayNew();
+    iVG_GLVertexArrayBind(VAO);
 
-    uint32_t VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(0));
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(2*sizeof(float)));
-    glEnableVertexAttribArray(1);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    
+    iVG_GLBufferData(vertices, sizeof(vertices), 0);
     
     glUseProgram(shader_program);
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    iVG_GLDrawTriangles(sizeof(vertices)/(sizeof(float)*vert_size));
+
+    iVG_GLVertexArrayDestroy(VAO);
 }
 
 void iVG_ShadersInit() {
