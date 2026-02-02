@@ -25,6 +25,12 @@ void VG_WindowSizeGet(float* out);
 void VG_WindowSizeUpdate();
 
 
+// FPS
+double VG_FPSGet();
+
+double VG_DeltaTimeGet();
+
+
 // DRAWING MODES
 void VG_DrawingBegin();
 

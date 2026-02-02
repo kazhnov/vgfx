@@ -13,5 +13,5 @@ clear: example/clear_screen.c build
 	LD_LIBRARY_PATH=./lib build/examples/clear
 
 shapes: example/shapes.c build
-	cc example/shapes.c -o build/examples/shapes -L./lib -lvgfx
+	cc example/shapes.c -o build/examples/shapes -L./lib -lvgfx -lm
 	LD_LIBRARY_PATH=./lib build/examples/shapes

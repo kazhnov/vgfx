@@ -7,25 +7,27 @@
 #include <assert.h>
 
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
-typedef uint32_t VBO_t;
-
 static GLFWwindow *window = NULL;
 static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 const uint8_t *keys;
 static float window_size[2];
 static uint32_t shader_program;
+static double current_time;
+static double previous_time;
 
+const uint32_t dims = 3;
+const uint32_t colors = 4;
+const uint32_t vert_size = dims+colors;
 const char* vertex_shader_source = "                     \n"
     "#version 330 core                                   \n"
-    "layout (location = 0) in vec2 aPos;                 \n"
+    "layout (location = 0) in vec3 aPos;                 \n"
     "layout (location = 1) in vec4 aColor;               \n"
     "out vec4 bColor;                                    \n"
     "void main()                                         \n"
     "{                                                   \n"
     "    bColor = aColor;                                \n"
-    "    gl_Position = vec4(aPos.x, aPos.y, 1.f, 1.f);   \n"
+    "    gl_Position = vec4(aPos, 1.f);   \n"
     "}                                                   \0";
-
 
 const char* fragment_shader_source = "            \n"
     "#version 330 core                            \n"
@@ -50,6 +52,15 @@ void iVG_FramebufferSizeCallback(GLFWwindow *window, int width, int height);
 void iVG_InputUpdate();
 void iVG_PollEvents();
 
+
+// BUFFERING DATA
+typedef uint32_t VAO_t;
+typedef uint32_t VBO_t;
+VAO_t iVG_GLVertexArrayNew();
+void  iVG_GLVertexArrayBind(VAO_t VAO);
+void  iVG_GLBufferData(float* vertices, uint32_t size, uint32_t flags);
+void  iVG_GLDrawTriangles(VAO_t amount);
+void  iVG_GLVertexArrayDestroy(VAO_t VAO);
 
 // INITIALIZATION AND CLOSING
 void VG_WindowOpen(char* name, float* size, uint32_t flags) {
@@ -77,6 +88,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     }
     
     iVG_ShadersInit();
+    current_time = glfwGetTime();
 }
 
 bool VG_WindowShouldClose() {
@@ -107,10 +119,22 @@ void VG_WindowSizeUpdate() {
 }
 
 
+// FPS
+double VG_FPSGet() {
+    return 1./VG_DeltaTimeGet();
+}
+
+double VG_DeltaTimeGet() {
+    return current_time - previous_time;
+}
+
+
 // DRAWING MODES
 void VG_DrawingBegin() {
     iVG_InputUpdate();
     VG_Clear(background_color);
+    previous_time = current_time;
+    current_time = glfwGetTime();
 }
 
 void VG_DrawingEnd() {
@@ -227,7 +251,7 @@ void iVG_GLDrawTriangles(uint32_t amount) {
     glDrawArrays(GL_TRIANGLES, 0, 3*amount);
 }
 
-void iVG_GLVertexArrayBind(uint32_t VAO) {
+void iVG_GLVertexArrayBind(VAO_t VAO) {
     glBindVertexArray(VAO);
 }
 
@@ -235,20 +259,16 @@ void iVG_GLVertexArrayUnbind() {
     glBindVertexArray(0);
 }
 
-uint32_t iVG_GLVertexArrayNew() {
-    uint32_t VAO;
+VAO_t iVG_GLVertexArrayNew() {
+    VAO_t VAO;
     glGenVertexArrays(1, &VAO);
     return VAO;
 }
 
-uint32_t iVG_GLVertexArrayDestroy(uint32_t VAO) {
+void iVG_GLVertexArrayDestroy(VAO_t VAO) {
     glDeleteVertexArrays(1, &VAO);
 }
 
-
-const uint32_t dims = 2;
-const uint32_t colors = 4;
-const uint32_t vert_size = dims+colors;
 
 void iVG_GLBufferData(float* vertices, uint32_t arr_size, uint32_t flags) {
     uint32_t VBO;
@@ -272,13 +292,13 @@ void iVG_GLBufferData(float* vertices, uint32_t arr_size, uint32_t flags) {
 void iVG_GLFillRect(float* pos, float* size, float* color) {
     float vertices[] =
 	{
-	    pos[0],           pos[1],           color[0], color[1], color[2], color[3],
-	    pos[0],           pos[1] + size[1], color[0], color[1], color[2], color[3],
-	    pos[0] + size[0], pos[1] + size[1], color[0], color[1], color[2], color[3],
+	    pos[0],           pos[1],           0, color[0], color[1], color[2], color[3],
+	    pos[0],           pos[1] + size[1], 0, color[0], color[1], color[2], color[3],
+	    pos[0] + size[0], pos[1] + size[1], 0, color[0], color[1], color[2], color[3],
 
-	    pos[0],           pos[1],           color[0], color[1], color[2], color[3],	    
-	    pos[0] + size[0], pos[1] + size[1], color[0], color[1], color[2], color[3],
-	    pos[0] + size[0], pos[1],           color[0], color[1], color[2], color[3],
+	    pos[0],           pos[1],           0, color[0], color[1], color[2], color[3],	    
+	    pos[0] + size[0], pos[1] + size[1], 0, color[0], color[1], color[2], color[3],
+	    pos[0] + size[0], pos[1],           0, color[0], color[1], color[2], color[3],
         };
     
     uint32_t VAO = iVG_GLVertexArrayNew();
