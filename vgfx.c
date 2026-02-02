@@ -14,6 +14,7 @@ static float window_size[2];
 static uint32_t shader_program;
 static double current_time;
 static double previous_time;
+static bool vsync;
 
 const uint32_t dims = 3;
 const uint32_t colors = 4;
@@ -70,7 +71,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    
     window = glfwCreateWindow(size[0], size[1], name, NULL, NULL);
     if (!window) {
 	printf("Failed to create GLFW window\n");
@@ -86,6 +87,8 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
 	glfwTerminate();
 	exit(1);
     }
+
+    VG_VSyncSet(0);
     
     iVG_ShadersInit();
     current_time = glfwGetTime();
@@ -97,6 +100,24 @@ bool VG_WindowShouldClose() {
 
 void VG_WindowClose() {}
 
+
+void VG_WindowTitleSet(char* new) {
+    glfwSetWindowTitle(window, new);
+}
+
+void VG_WindowTitleGet(char* out) {
+    printf("not implemented WindowTitleGet\n");
+    exit(1);
+}
+
+void VG_VSyncSet(bool value) {
+    vsync = value;
+    glfwSwapInterval(value);
+}
+
+bool VG_VSyncGet() {
+    return vsync;
+}
 
 // BACKGROUND COLOR
 void VG_BackgroundColorSet(float* in) {

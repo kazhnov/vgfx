@@ -12,6 +12,13 @@ bool VG_WindowShouldClose();
 
 void VG_WindowClose();
 
+void VG_WindowTitleSet(char* new);
+
+void VG_WindowTitleGet(char* out);
+
+void VG_VSyncSet(bool);
+
+bool VG_VSyncGet();
 
 // BACKGROUND COLOR
 void VG_BackgroundColorGet(float* out);
