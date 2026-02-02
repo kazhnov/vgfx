@@ -220,23 +220,18 @@ void iVG_SetupOpengl() {
     glViewport(0, 0, window_size[0], window_size[1]);
 }
 
-void iVG_GLBufferData(float* vertices, uint32_t amount, uint32_t flags) {
-    uint32_t dims = 2;
-    uint32_t colors = 0;
-    uint32_t stride = dims+colors;
-    
-    VBO_t VBO;
+void iVG_GLBufferData(float* vertices, uint32_t size, uint32_t flags) {
+    uint32_t VBO;
     glGenBuffers(1, &VBO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, amount*sizeof(float), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
     
-    glVertexAttribPointer(0, dims,   GL_FLOAT, GL_FALSE, stride*sizeof(float), (void*)(0));
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(0));
     glEnableVertexAttribArray(0);
-//    glVertexAttribPointer(1, colors, GL_FLOAT, GL_FALSE, stride*sizeof(float), (void*)(dims*sizeof(float)));
-//    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(2*sizeof(float)));
+    glEnableVertexAttribArray(1);
     
-    glBindBuffer(GL_ARRAY_BUFFER,   0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void iVG_GLDrawTriangles(uint32_t amount) {
@@ -278,10 +273,10 @@ void iVG_GLFillRect(float* pos, float* size, float* color) {
     glGenBuffers(1, &VBO);
 
     glBindVertexArray(VAO);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(0));
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(2*sizeof(float)));
@@ -289,8 +284,7 @@ void iVG_GLFillRect(float* pos, float* size, float* color) {
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    
-    
+
     glUseProgram(shader_program);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
