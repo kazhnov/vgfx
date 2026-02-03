@@ -15,11 +15,10 @@ int main() {
 
     char buffer[256];
 
-//    VG_VSyncSet(0);
     while (!VG_WindowShouldClose()) {
 	angle += VG_DeltaTimeGet();
-	snprintf(buffer, 255, "FPS: %.0f", VG_FPSGet());
-	printf("FPS: %.0f\n", VG_FPSGet());
+//	snprintf(buffer, 255, "FPS: %.0f", VG_FPSGet());
+//	printf("FPS: %.0f\n", VG_FPSGet());
 	VG_WindowTitleSet(buffer);
 	float offset[] = {radius, 0};
 	VM2_Rotate(offset, angle);
@@ -28,7 +27,10 @@ int main() {
 	
 	VG_DrawingBegin();
 	
-	VG_FillRectCentered(pos, (float[]){.2f, .2f}, VRGBA_YELLOW);
+	VG_FillCircle(pos, 0.2, VRGBA_WHITE);	
+	VG_FillPolygon(pos, 0.2, 0, 6, VRGBA_YELLOW);
+	VG_FillPolygon(pos, 0.15, 3.1415/4, 4, VRGBA_RED);
+
 	
 	VG_DrawingEnd();
     }

@@ -1,7 +1,14 @@
 #include "include/vmath/vmath.h"
 #include "include/vcolor/vcolor.h"
+#include "include/vmesh/vmesh.h"
 #include <stdbool.h>
 #include <stdint.h>
+#define VG_KEY_SPACE 32
+#define VG_KEY_LEFT_SHIFT 340
+#define VG_KEY_W 87
+#define VG_KEY_S 83
+#define VG_KEY_A 65
+#define VG_KEY_D 68
 
 #define VG_WINDOW_FLAG_VSYNC (1)
 
@@ -38,6 +45,23 @@ double VG_FPSGet();
 double VG_DeltaTimeGet();
 
 
+typedef struct {
+    float position[3];
+    float rotation[3];
+    float fov;
+} Camera;
+
+// Camera
+void VG_CameraPositionSet(float *pos);
+void VG_CameraPositionGet(float *pos);
+void VG_CameraRotationSet(float *pos);
+void VG_CameraRotationGet(float *pos);
+Camera *VG_CameraGet();
+void VG_CameraSet(Camera camera);
+void VG_CameraForwardGet(float* out);
+void VG_CameraRightGet(float* out);
+
+
 // DRAWING MODES
 void VG_DrawingBegin();
 
@@ -55,6 +79,36 @@ bool VG_KeyPressed(uint64_t key);
 bool VG_KeyDown(uint64_t key);
 
 const uint8_t *VG_KeysGet(uint32_t *number_of_keys);
+
+
+// MOUSE
+void VG_MouseDeltaGet(float* out);
+
+void VG_MouseGet(float* out);
+
+
+// ENTITIES
+struct Entity;
+typedef struct Entity Entity;
+
+Entity* VG_EntityCreate();
+
+Entity* VG_EntityCreateWithMesh(Mesh* mesh);
+
+void VG_EntityDestroy(Entity* entity);
+
+void VG_EntityMeshSet(Entity* entity, Mesh* mesh);
+
+void VG_EntityPosSet(Entity* entity, float* in);
+
+void VG_EntityPosGet(Entity* entity, float* out);
+
+float VG_EntitySizeGet(Entity* entity);
+
+void VG_EntitySizeSet(Entity* entity, float size);
+
+void VG_EntityDraw(Entity* entity);
+
 
 // DRAWING SHAPES
 
