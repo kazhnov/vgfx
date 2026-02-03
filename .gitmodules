@@ -4,3 +4,6 @@
 [submodule "include/vcolor"]
 	path = include/vcolor
 	url = git@github.com:kazhnov/vcolor.git
+[submodule "include/vmesh"]
+	path = include/vmesh
+	url = https://github.com/kazhnov/vmesh
