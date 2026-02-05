@@ -21,4 +21,3 @@ shapes: example/shapes.c build
 mesh: example/mesh.c build
 	cc example/mesh.c -o build/examples/mesh -L./lib -lvgfx -lm -lvmesh
 	LD_LIBRARY_PATH=./lib build/examples/mesh
-

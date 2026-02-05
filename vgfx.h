@@ -44,6 +44,7 @@ double VG_FPSGet();
 
 double VG_DeltaTimeGet();
 
+double VG_TimeGet();
 
 typedef struct {
     float position[3];
@@ -61,6 +62,32 @@ void VG_CameraSet(Camera camera);
 void VG_CameraForwardGet(float* out);
 void VG_CameraRightGet(float* out);
 
+//LIGHT
+typedef enum LightType {
+    LIGHT_TYPE_DIRECTIONAL,
+    LIGHT_TYPE_POINT,
+    LIGHT_TYPE_COUNT,
+} LightType;
+
+typedef struct {
+    float direction[3];
+    float color[3];
+    LightType type;
+} Light;
+
+Light *VG_LightGet();
+
+void VG_LightDirectionSet(float* dir);
+void VG_LightDirectionGet(float* out);
+
+void VG_LightPositionSet(float* dir);
+void VG_LightPositionGet(float* out);
+
+void VG_LightColorSet(float* color);
+void VG_LightColorGet(float* out);
+
+void VG_LightAmbientColorSet(float* color);
+void VG_LightAmbientColorGet(float* out);
 
 // DRAWING MODES
 void VG_DrawingBegin();
