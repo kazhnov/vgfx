@@ -1,6 +1,5 @@
 #include "include/vmath/vmath.h"
 #include "include/vcolor/vcolor.h"
-#include "include/vmesh/vmesh.h"
 #include <stdbool.h>
 #include <stdint.h>
 #define VG_KEY_SPACE 32
@@ -113,29 +112,9 @@ void VG_MouseDeltaGet(float* out);
 
 void VG_MouseGet(float* out);
 
-
-// ENTITIES
-struct Entity;
-typedef struct Entity Entity;
-
-Entity* VG_EntityCreate();
-
-Entity* VG_EntityCreateWithMesh(Mesh* mesh);
-
-void VG_EntityDestroy(Entity* entity);
-
-void VG_EntityMeshSet(Entity* entity, Mesh* mesh);
-
-void VG_EntityPosSet(Entity* entity, float* in);
-
-void VG_EntityPosGet(Entity* entity, float* out);
-
-float VG_EntitySizeGet(Entity* entity);
-
-void VG_EntitySizeSet(Entity* entity, float size);
-
-void VG_EntityDraw(Entity* entity);
-
+// MESHES
+uint32_t VG_ModelNew(char* path);
+void     VG_ModelDrawAt(uint32_t model_handle, float pos[], float size[]);
 
 // DRAWING SHAPES
 

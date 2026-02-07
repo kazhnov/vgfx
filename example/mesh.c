@@ -4,11 +4,17 @@
 #include <string.h>
 #include <stdio.h>
 
-static Mesh* mesh_bunny;
-static Mesh* mesh_teapot;
+static uint32_t model_bunny;
+static uint32_t model_teapot;
 static float size[2] = {720.f, 720.f};
-static Entity* sun;
 
+typedef struct {
+    float pos[3];
+    float size[3];
+    uint32_t model;
+} Object;
+
+static Object sun;
 
 void GAME_HandleInput(Camera* camera) {
     double dt = VG_DeltaTimeGet();
@@ -44,21 +50,17 @@ void GAME_HandleInput(Camera* camera) {
 //    camera->rotation[0] -= mouse_delta[1]*sensitivity;
 }
 
-void GAME_BunniesInit(Entity* bunnies[], uint32_t count) {
+void GAME_BunniesInit(Object bunnies[], uint32_t count) {
     for (int i = 0; i < count; i++) {
-	bunnies[i] = VG_EntityCreate();
-	printf("b %d\n", VMESH_VertexCount(mesh_bunny));
-	VG_EntityMeshSet(bunnies[i], mesh_bunny);
-	printf("c\n");
-	
-	VG_EntityPosSet(bunnies[i], (float[]){0, 0., i});
-	VG_EntitySizeSet(bunnies[i], 0.5f);
+	bunnies[i].model = model_bunny;
+	VM3_Set(bunnies[i].size, 0, 0, 0);
+	VM3_Set(bunnies[i].pos,  0, 0, i);
     }
 }
 
-void GAME_BunniesDraw(Entity* bunnies[], uint32_t count) {
+void GAME_BunniesDraw(Object bunnies[], uint32_t count) {
     for (int i = 0; i < count; i++) {
-	VG_EntityDraw(bunnies[i]);
+	VG_ModelDrawAt(bunnies[i].model, bunnies[i].pos, bunnies[i].size);
     }
 }
 
@@ -70,7 +72,7 @@ void GAME_LightUpdate() {
     pos[0] = fabs(sinf(time));
     VG_LightPositionSet(pos);
     VG_LightColorSet(pos);
-    VG_EntityPosSet(sun, pos);
+    VM3_Copy(sun.pos, pos);
 }
 
 int main() {
@@ -78,18 +80,18 @@ int main() {
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(true);
 
-    mesh_bunny = VMESH_LoadObj("/home/jkasinowe/projects/c/vmesh/bunny.obj");
-    mesh_teapot = VMESH_LoadObj("/home/jkasinowe/projects/c/vgfx/teapot.obj");
+    model_bunny = VG_ModelNew("/home/jkasinowe/projects/c/vgfx/bunny.obj");
+    model_teapot = VG_ModelNew("/home/jkasinowe/projects/c/vgfx/teapot.obj");
 
-    sun = VG_EntityCreate();
-    VG_EntityMeshSet(sun, mesh_teapot);
-    VG_EntityPosSet(sun, (float[]){0.0, 0.0, 0.0});
-    VG_EntitySizeSet(sun, 0.1);
+    sun.model = model_teapot;
+    VM3_Set(sun.pos, 0.0, 0.0, 0.0);
+    VM3_Set(sun.size, 0.1, 0.1, 0.1);
     
     printf("a\n");
-    
-    Entity* bunnies[2];
-    GAME_BunniesInit(bunnies, 2);
+
+    const uint32_t BUNNYC;
+    Object bunnies[BUNNYC];
+    GAME_BunniesInit(bunnies, BUNNYC);
 
     float background[3] = {0.0, 0.1, 0.3};
     VG_BackgroundColorSet(background);
@@ -97,6 +99,7 @@ int main() {
     VG_LightPositionSet((float[]){0.5, 0, 0});
     VG_LightColorSet((float[]){1.0, 1.0, 0.0});
     VG_LightAmbientColorSet(background);
+    printf("b\n");
     
     while (!VG_WindowShouldClose()) {
 	GAME_LightUpdate();
@@ -104,8 +107,11 @@ int main() {
 	VG_DrawingBegin();
 	GAME_HandleInput(camera);
 
-	GAME_BunniesDraw(bunnies, 2);
-	VG_EntityDraw(sun);
+	printf("c\n");
+	GAME_BunniesDraw(bunnies, BUNNYC);
+	printf("d\n");
+	VG_ModelDrawAt(sun.model, sun.pos, sun.size);
+	
 	
 	VG_DrawingEnd();
     }

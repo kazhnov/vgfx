@@ -1,15 +1,21 @@
 #include "vgfx.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "include/vmesh/vmesh.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
-
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
+
+#if 1
+#define iVG_Log(a) printf(a "\n")
+#else
+#define iVG_Log(a)
+#endif
+
 static GLFWwindow *window = NULL;
 static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-const uint8_t *keys;
 static float window_size[2];
 static uint32_t shader_program;
 static double current_time;
@@ -25,8 +31,10 @@ static float mouse_last[2];
 static float mouse_delta[2];
 
 const uint32_t dims = 3;
-const uint32_t normals = 4;
-const uint32_t vert_size = dims;
+const uint32_t normals = 3;
+const uint32_t uvs = 2;
+const uint32_t vert_size = dims + normals + uvs;
+
 const char* vertex_shader_source = "                     \n"
     "#version 330 core                                   \n"
     "layout (location = 0) in vec3 aPos;                 \n"
@@ -57,8 +65,8 @@ const char* fragment_shader_source = "            \n"
     "void main()                                  \n"
     "{                                            \n"
     "         float refl = 0.8;                                \n"
-    "         vec3 normal = normalize(bNormal);                \n"
-#if 1
+    "        vec3 normal = normalize(bNormal);                \n"
+#if 0
     "         FragColor = vec4(normalize(bNormal), 1.0);                   \n"
 #else
     "         vec3 direction;                                  \n"
@@ -75,17 +83,26 @@ const char* fragment_shader_source = "            \n"
     "}                                                         \0";
 
 void iVG_RenderFlush();
-void iVG_ColorSet(float *color);
 void iVG_KeysUpdate();
-void iVG_VertexColoredGet(float* point, float* color, float* out);
 void iVG_SetupOpengl();
-void iVG_GLFillRect(float* pos, float* size, float* color);
 void iVG_ShadersInit();
 void iVG_FramebufferSizeCallback(GLFWwindow *window, int width, int height);
 void iVG_MouseCallback(GLFWwindow* window, double x, double y);
 void iVG_InputUpdate();
 void iVG_PollEvents();
 
+// iMODEL
+typedef struct {
+    Mesh* base;
+    uint32_t position;
+    uint32_t size;
+} ModelArena;
+
+static ModelArena model_arena;
+
+void iVG_ModelAreanaInit(uint32_t size);
+uint32_t iVG_ModelArenaBump();
+Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle);
 
 // BUFFERING DATA
 typedef uint32_t VAO_t;
@@ -93,18 +110,14 @@ typedef uint32_t VBO_t;
 VAO_t iVG_GLVertexArrayNew();
 void  iVG_GLVertexArrayBind(VAO_t VAO);
 void  iVG_GLBufferData(uint32_t pointer, float* vertices, uint32_t arr_size, uint32_t flags, uint32_t stride);
-void  iVG_Gl_BufferVertices(Vertex* vertices, uint32_t arr_size);
 void  iVG_GLDrawTriangles(VAO_t amount);
 void  iVG_GLVertexArrayDestroy(VAO_t VAO);
-void  iVG_GLRenderVertices(float* vertices, uint32_t size);
-void  iVG_GLRenderVerticesNormalsIndices(float* vertices, uint32_t vcount, float* normals, uint32_t *indices, uint32_t icount);
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcound, uint32_t *indices, uint32_t icount);
-void  iVG_GLSetTransform(float* matrix);
+void  iVG_GLTransformSet(float* matrix);
 void  iVG_GLCameraUpdate();
-void iVG_GLLightUpdate();
-void iVG_GLUniformVec3Set(char* name, float* vec);
-void iVG_GLPerspectiveUpdate();
-void iVG_EntityGetMatrix(Entity* entity, float* matrix);
+void  iVG_GLLightUpdate();
+void  iVG_GLUniformVec3Set(char* name, float* vec);
+void  iVG_GLPerspectiveUpdate();
 
 
 // INITIALIZATION AND CLOSING
@@ -149,11 +162,9 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     camera.fov = V_PI/2;
     
     float mat[16] = VM44_IDENTITY;
-//    float p[3] = {0, 0, -2};
-//    VM44_Translate(mat, p);
     glUseProgram(shader_program);
     
-    iVG_GLSetTransform(mat);
+    iVG_GLTransformSet(mat);
 }
 
 bool VG_WindowShouldClose() {
@@ -314,7 +325,6 @@ void VG_DrawingEnd() {
 
 // CLEARING SCREEN
 void VG_Clear(float* color) {
-    iVG_ColorSet(color);
     glClearColor(color[0], color[1], color[2], color[3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
 }
@@ -342,132 +352,31 @@ void VG_MouseGet(float* out) {
     VM2_Copy(out, mouse_last);
 }
 
-// ENTITIES
-struct Entity {
-    Mesh* mesh;
-    float pos[3];
-    float size;
-};
-
-Entity* VG_EntityCreate() {
-    return calloc(1, sizeof(Entity));
+// MODEL
+uint32_t VG_ModelNew(char* path) {
+    uint32_t model_handle = iVG_ModelArenaBump();
+    Mesh* mesh = iVG_ModelArenaPointerGet(model_handle);
+    mesh = malloc(sizeof(Mesh));
+    VMESH_LoadObj(mesh, path);
+    return model_handle;
 }
 
-Entity* VG_EntityCreateWithMesh(Mesh* mesh) {
-    Entity* entity = VG_EntityCreate();
-    VG_EntityMeshSet(entity, mesh);
-    return entity;
-}
-
-void VG_EntityDestroy(Entity* entity) {
-    free(entity);
-}
-
-void VG_EntityMeshSet(Entity* entity, Mesh* mesh) {
-    printf("setting entity mesh\n");
-    entity->mesh = mesh;
-    printf("mesh is set\n");
-}
-
-void VG_EntityPosSet(Entity* entity, float* in) {
-    VM3_Copy(entity->pos, in);
-}
-
-void VG_EntityPosGet(Entity* entity, float* out) {
-    VM3_Copy(out, entity->pos);
-}
-
-
-float VG_EntitySizeGet(Entity* entity) {
-    return entity->size;
-}
-
-void VG_EntitySizeSet(Entity* entity, float size) {
-    entity->size = size;
-}
-
-
-void VG_EntityDraw(Entity* entity) {
+void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]) {
+    iVG_Log("Rendering mesh");
     float transform[16];
-    iVG_EntityGetMatrix(entity, transform);
-    iVG_GLSetTransform(transform);
-
-    iVG_GLRenderVerticesIndexed(VMESH_Vertices(entity->mesh),
-				VMESH_VertexCount(entity->mesh),
-				VMESH_Indices(entity->mesh),
-				VMESH_IndicesCount(entity->mesh)
-	);
-}
-
-// DRAWING SHAPES
-void VG_FillRect(float* pos, float* size, float* color) {
-    iVG_ColorSet(color);
-    iVG_GLFillRect(pos, size, color);
-}
-
-void VG_FillRectCentered(float* pos, float* size, float* color) {
-    float realpos[2];
-    float half[2];
-    VM2_ScaleO(size, 0.5, half);
-    VM2_SubO(pos, half, realpos);
-    VG_FillRect(realpos, size, color);
-}
-
-void VG_DrawCircle(float* pos, float r, float* color);
-
-void VG_FillPolygon(float *pos, float r, float angle, uint32_t sides, float* color) {
-    if (sides < 3) return;
-    float center[2];
-    VM2_Copy(center, pos);
-
-    float verts[vert_size*sides*3];
-    float prev[2], now[2];
-    
-    prev[0] = center[0] + cosf(angle - 2*3.1415926535f/sides) * r;
-    prev[1] = center[1] + sinf(angle - 2*3.1415926535f/sides) * r;
-    
-    for (int i = 0; i < sides; i++) {
-	now[0] = center[0] + cosf(angle) * r;
-	now[1] = center[1] + sinf(angle) * r;
-	iVG_VertexColoredGet(now,    color, &verts[vert_size*(i*3+0)]);
-	iVG_VertexColoredGet(prev,   color, &verts[vert_size*(i*3+1)]);
-	iVG_VertexColoredGet(center, color, &verts[vert_size*(i*3+2)]);
-	angle += 2*3.1415926535f/sides;
-	VM2_Copy(prev, now);
-    }
-    
-    iVG_GLRenderVertices(verts, sizeof(verts));
-}
-
-void VG_FillCircle(float *pos, float r, float* color) {
-    VG_FillPolygon(pos, r, 0, 32, color);
-}
-
-
-void VG_DrawLine(float* from, float* to, float* color) {
-    iVG_ColorSet(color);
-    //SDL_RenderLine(renderer, from[0], from[1], to[0], to[1]);
-}
-
-void VG_DrawLines(float* points, uint32_t amount, float* color) {
-    iVG_ColorSet(color);
-    for (int i = 0; i < amount - 2; i += 2) {
-	//SDL_RenderLine(renderer, points[i], points[i+1], points[i+2], points[i+3]);
-    }
+    VM44_V3A3(pos, size, transform);
+    iVG_GLTransformSet(transform);
+    Mesh* mesh = iVG_ModelArenaPointerGet(model_handle);
+    printf("%f\n", mesh->vertices[10].pos);
+    iVG_GLRenderVerticesIndexed(mesh->vertices, mesh->vertex_count,
+				mesh->indices, mesh->index_count);
+    iVG_Log("Rendered mesh");
 }
 
 
 // INTERNALS
 void iVG_RenderFlush() {
     glfwSwapBuffers(window);
-}
-
-void iVG_ColorSet(float *color) {
-    
-}
-
-void iVG_KeysUpdate() {
-//    keys = VG_KeysGet(NULL);
 }
 
 void iVG_SetupOpengl() {
@@ -478,7 +387,6 @@ void iVG_SetupOpengl() {
     glClearColor(0,0,0,0);
     glViewport(0, 0, window_size[0], window_size[1]);
 }
-
 
 void iVG_GLDrawTriangles(uint32_t amount) {
     glDrawArrays(GL_TRIANGLES, 0, 3*amount);
@@ -514,47 +422,6 @@ void iVG_GLBufferIndices(uint32_t* indices, uint32_t arr_len, uint32_t flags) {
 }
 
 
-void iVG_GLFillRect(float* pos, float* size, float* color) {
-    float vertices[] =
-	{
-	    pos[0],           pos[1],           0, color[0], color[1], color[2], color[3],
-	    pos[0],           pos[1] + size[1], 0, color[0], color[1], color[2], color[3],
-	    pos[0] + size[0], pos[1] + size[1], 0, color[0], color[1], color[2], color[3],
-
-	    pos[0],           pos[1],           0, color[0], color[1], color[2], color[3],	    
-	    pos[0] + size[0], pos[1] + size[1], 0, color[0], color[1], color[2], color[3],
-	    pos[0] + size[0], pos[1],           0, color[0], color[1], color[2], color[3],
-        };
-
-    iVG_GLRenderVertices(vertices, sizeof(vertices));
-}
-
-void iVG_GLRenderVertices(float *vertices, uint32_t size) {
-    uint32_t VAO = iVG_GLVertexArrayNew();
-    iVG_GLVertexArrayBind(VAO);
-
-    iVG_GLBufferData(0, vertices, size, 0, vert_size);
-    
-    glUseProgram(shader_program);
-    iVG_GLDrawTriangles(size/(sizeof(float)*vert_size));
-
-    iVG_GLVertexArrayDestroy(VAO);
-}
-
-void iVG_GLBufferData(uint32_t attrib_pointer, float* data, uint32_t count, uint32_t flags, uint32_t stride) {
-    uint32_t VBO;
-    glGenBuffers(1, &VBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, count*stride*sizeof(float), data, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(attrib_pointer, stride, GL_FLOAT, GL_FALSE, stride*sizeof(float), (void*)(0));
-    glEnableVertexAttribArray(attrib_pointer);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-
 void iVG_GLBufferVertices(Vertex* vertices, uint32_t count) {
     uint32_t VBO;
     glGenBuffers(1, &VBO);
@@ -584,7 +451,7 @@ void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t *i
     }
     exit(1);
 #endif
-    printf("vcount: %u, icount: %u\n", vcount, icount);
+//    printf("vcount: %u, icount: %u\n", vcount, icount);
     uint32_t VAO = iVG_GLVertexArrayNew();
     iVG_GLVertexArrayBind(VAO);
     
@@ -597,30 +464,7 @@ void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t *i
     glDrawElements(GL_TRIANGLES, icount, GL_UNSIGNED_INT, NULL);
 
     iVG_GLVertexArrayBind(0);
-    iVG_GLVertexArrayDestroy(VAO);
-    
-}
-
-void iVG_GLRenderVerticesNormalsIndices(float* vertices, uint32_t vcount, float* normals, uint32_t *indices, uint32_t icount) {
-    uint32_t VAO = iVG_GLVertexArrayNew();
-    iVG_GLVertexArrayBind(VAO);
-    iVG_GLBufferData(0, vertices, vcount, 0, 3);
-
-    if (normals) {
-/*	for (int i = 0; i < 10; i++) {
-	    printf("%f %f %f\n", normals[3*i], normals[3*i+1], normals[3*i+2]);
-	}
-*/	
-	iVG_GLBufferData(1, normals, vcount, 0, 3);
-    }
-    
-    iVG_GLBufferIndices(indices, icount*sizeof(uint32_t), 0);
-
-    glUseProgram(shader_program);
-    
-    glDrawElements(GL_TRIANGLES, icount, GL_UNSIGNED_INT, NULL);
-
-    iVG_GLVertexArrayDestroy(VAO);
+    iVG_GLVertexArrayDestroy(VAO);    
 }
 
 void iVG_ShadersInit() {
@@ -694,7 +538,7 @@ void iVG_VertexColoredGet(float* point, float* color, float* out) {
     VRGBA_Copy(out+dims, color);
 }
 
-void  iVG_GLSetTransform(float* matrix) {
+void  iVG_GLTransformSet(float* matrix) {
     uint32_t transform_loc = glGetUniformLocation(shader_program, "model");
     glUniformMatrix4fv(transform_loc, 1, GL_TRUE, matrix);
 }
@@ -736,13 +580,6 @@ void iVG_GLLightUpdate() {
     iVG_GLUniformVec3Set("ambient", ambient_color);
 }
 
-void iVG_EntityGetMatrix(Entity* entity, float* matrix) {
-    float temp[16] = VM44_IDENTITY;
-    VM44_Scale(temp, (float[]){entity->size, entity->size, entity->size});
-    VM44_Translate(temp, entity->pos);
-    VM44_Copy(matrix, temp);
-}
-
 void iVG_MouseCallback(GLFWwindow* window, double x, double y) {
  
     if (mouse_first) {
@@ -752,8 +589,31 @@ void iVG_MouseCallback(GLFWwindow* window, double x, double y) {
     
     mouse_delta[0] = x - mouse_last[0];
     mouse_delta[1] = y - mouse_last[1];
-    printf("x: %f, y: %f\n", mouse_delta[0], mouse_delta[1]);
     
     
     VM2_Set(mouse_last, x, y);
+}
+
+void iVG_ModelAreanaInit(uint32_t size) {
+    model_arena.position = 1;
+    if (size < 2) size = 2;
+    model_arena.size = size;
+    model_arena.base = malloc(size*sizeof(Mesh));
+}
+
+uint32_t iVG_ModelArenaBump() {
+    uint32_t temp = model_arena.position;
+    model_arena.position++;
+    if (model_arena.position >= model_arena.size) {
+	model_arena.size *=2;
+	model_arena.base = realloc(model_arena.base, model_arena.size*sizeof(Mesh));
+    }
+    return temp;
+}
+
+Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle) {
+    if (model_handle > model_arena.position) {
+	assert(false && "Model handle is not valid (too big)");
+    }
+    return model_arena.base + model_handle;
 }
