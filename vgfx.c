@@ -165,6 +165,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     glUseProgram(shader_program);
     
     iVG_GLTransformSet(mat);
+    iVG_ModelAreanaInit(1024);
 }
 
 bool VG_WindowShouldClose() {
@@ -615,5 +616,6 @@ Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle) {
     if (model_handle > model_arena.position) {
 	assert(false && "Model handle is not valid (too big)");
     }
+    printf("%d\n", model_handle);
     return model_arena.base + model_handle;
 }
