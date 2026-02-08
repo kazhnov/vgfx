@@ -3,7 +3,7 @@
 	url = https://github.com/kazhnov/vmath
 [submodule "include/vcolor"]
 	path = include/vcolor
-	url = git@github.com:kazhnov/vcolor.git
+	url = https://github.com/kazhnov/vcolor
 [submodule "include/vmesh"]
 	path = include/vmesh
 	url = https://github.com/kazhnov/vmesh
