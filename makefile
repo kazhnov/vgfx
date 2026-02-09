@@ -1,4 +1,4 @@
-DEBUG = -g -O0 -fsanitize=address -Wall -Wextra -Wno-unused-parameter -Wno-error=cpp
+DEBUG = -g -O0 -fsanitize=address -Wall -Wextra -Wno-unused-parameter -Werror -Wno-error=cpp
 RELEASE = -O3
 MODE = $(DEBUG)
 PREFIX = LD_LIBRARY_PATH="./lib" LSAN_OPTIONS=print_indirect_leaks=0

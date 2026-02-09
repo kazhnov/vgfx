@@ -100,10 +100,10 @@ typedef struct {
 
 static ModelArena model_arena;
 
-void iVG_ModelAreanaInit(uint32_t size);
+void     iVG_ModelArenaInit(uint32_t size);
 uint32_t iVG_ModelArenaBump();
-Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle);
-void iVG_ModelArenaDestroy();
+Mesh*    iVG_ModelArenaPointerGet(uint32_t model_handle);
+void     iVG_ModelArenaDestroy();
 
 // BUFFERING DATA
 typedef uint32_t VAO_t;
@@ -166,7 +166,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     glUseProgram(shader_program);
     
     iVG_GLTransformSet(mat);
-    iVG_ModelAreanaInit(1024);
+    iVG_ModelArenaInit(1024);
 }
 
 bool VG_WindowShouldClose() {
@@ -183,7 +183,7 @@ void VG_WindowTitleSet(char* new) {
 }
 
 const char* VG_WindowTitleGet() {
-    glfwGetWindowTitle(window);
+    return glfwGetWindowTitle(window);
 }
 
 void VG_VSyncSet(bool value) {
@@ -582,7 +582,7 @@ void iVG_MouseCallback(GLFWwindow* window, double x, double y) {
     VM2_Set(mouse_last, x, y);
 }
 
-void iVG_ModelAreanaInit(uint32_t size) {
+void iVG_ModelArenaInit(uint32_t size) {
     model_arena.position = 1;
     if (size < 2) size = 2;
     model_arena.size = size;

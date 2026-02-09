@@ -80,6 +80,7 @@ int main() {
     VG_VSyncSet(true);
 
     model_bunny = VG_ModelNew("bunny.obj");
+    
     model_teapot = VG_ModelNew("teapot.obj");
 
     sun.model = model_teapot;
@@ -96,9 +97,15 @@ int main() {
     VG_LightPositionSet((float[]){0.5, 0, 0});
     VG_LightColorSet((float[]){1.0, 1.0, 0.0});
     VG_LightAmbientColorSet(background);
+
+    char fpsstring[50];
     
     while (!VG_WindowShouldClose()) {
 	GAME_LightUpdate();
+
+	snprintf(fpsstring, 49, "FPS: %d", (uint32_t) VG_FPSGet());
+
+	VG_WindowTitleSet(fpsstring);
 	
 	VG_DrawingBegin();
 	GAME_HandleInput(camera);
