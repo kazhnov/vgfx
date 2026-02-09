@@ -8,10 +8,10 @@
 #include <assert.h>
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
 
-#if 1
+#if 0
 #define iVG_Log(a) printf(a "\n")
 #else
-#Define iVG_Log(a)
+#define iVG_Log(a)
 #endif
 
 static GLFWwindow *window = NULL;
@@ -103,6 +103,7 @@ static ModelArena model_arena;
 void iVG_ModelAreanaInit(uint32_t size);
 uint32_t iVG_ModelArenaBump();
 Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle);
+void iVG_ModelArenaDestroy();
 
 // BUFFERING DATA
 typedef uint32_t VAO_t;
@@ -172,16 +173,17 @@ bool VG_WindowShouldClose() {
     return glfwWindowShouldClose(window);
 }
 
-void VG_WindowClose() {}
-
+void VG_WindowClose() {
+    iVG_ModelArenaDestroy();
+    glfwTerminate();
+}
 
 void VG_WindowTitleSet(char* new) {
     glfwSetWindowTitle(window, new);
 }
 
-void VG_WindowTitleGet(char* out) {
-    printf("not implemented WindowTitleGet\n");
-    exit(1);
+const char* VG_WindowTitleGet() {
+    glfwGetWindowTitle(window);
 }
 
 void VG_VSyncSet(bool value) {
@@ -357,21 +359,18 @@ void VG_MouseGet(float* out) {
 uint32_t VG_ModelNew(char* path) {
     uint32_t model_handle = iVG_ModelArenaBump();
     Mesh* mesh = iVG_ModelArenaPointerGet(model_handle);
-    mesh = malloc(sizeof(Mesh));
     VMESH_LoadObj(mesh, path);
     return model_handle;
 }
 
 void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]) {
-    iVG_Log("Rendering mesh");
-    float transform[16];
-    VM44_V3A3(pos, size, transform);
+    float transform[16] = VM44_IDENTITY;
+    VM44_Scale(transform, size);
+    VM44_Translate(transform, pos);
     iVG_GLTransformSet(transform);
     Mesh* mesh = iVG_ModelArenaPointerGet(model_handle);
-    printf("%f\n", mesh->vertices[10].pos);
     iVG_GLRenderVerticesIndexed(mesh->vertices, mesh->vertex_count,
 				mesh->indices, mesh->index_count);
-    iVG_Log("Rendered mesh");
 }
 
 
@@ -441,18 +440,6 @@ void iVG_GLBufferVertices(Vertex* vertices, uint32_t count) {
 }
 
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t *indices, uint32_t icount) {
-#if 0
-    for (int i = 0; i < 20; i++) {
-//	int j = indices[i];
-	printf("vertex: %f %f %f\n",
-	       vertices[i].pos[0],
-	       vertices[i].pos[1],
-	       vertices[i].pos[2]);
-	printf("index: %d\n", indices[i]);
-    }
-    exit(1);
-#endif
-//    printf("vcount: %u, icount: %u\n", vcount, icount);
     uint32_t VAO = iVG_GLVertexArrayNew();
     iVG_GLVertexArrayBind(VAO);
     
@@ -616,6 +603,9 @@ Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle) {
     if (model_handle > model_arena.position) {
 	assert(false && "Model handle is not valid (too big)");
     }
-    printf("%d\n", model_handle);
     return model_arena.base + model_handle;
+}
+
+void iVG_ModelArenaDestroy() {
+    free(model_arena.base);
 }

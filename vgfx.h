@@ -20,7 +20,7 @@ void VG_WindowClose();
 
 void VG_WindowTitleSet(char* new);
 
-void VG_WindowTitleGet(char* out);
+const char* VG_WindowTitleGet();
 
 void VG_VSyncSet(bool);
 
@@ -114,7 +114,7 @@ void VG_MouseGet(float* out);
 
 // MESHES
 uint32_t VG_ModelNew(char* path);
-void     VG_ModelDrawAt(uint32_t model_handle, float pos[], float size[]);
+void     VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]);
 
 // DRAWING SHAPES
 

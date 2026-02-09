@@ -22,7 +22,6 @@ void GAME_HandleInput(Camera* camera) {
     VG_CameraForwardGet(forward);
     float forward_scaled[3];
     VM3_ScaleO(forward, dt, forward_scaled);
-
     
     float right[3];
     VG_CameraRightGet(right);
@@ -53,8 +52,8 @@ void GAME_HandleInput(Camera* camera) {
 void GAME_BunniesInit(Object bunnies[], uint32_t count) {
     for (int i = 0; i < count; i++) {
 	bunnies[i].model = model_bunny;
-	VM3_Set(bunnies[i].size, 0, 0, 0);
-	VM3_Set(bunnies[i].pos,  0, 0, i);
+	VM3_Set(bunnies[i].size, 0.5f, 0.5f, 0.5f);
+	VM3_Set(bunnies[i].pos,  0.f, 0.f, i  );
     }
 }
 
@@ -80,26 +79,23 @@ int main() {
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(true);
 
-    model_bunny = VG_ModelNew("/home/jkasinowe/projects/c/vgfx/bunny.obj");
-    model_teapot = VG_ModelNew("/home/jkasinowe/projects/c/vgfx/teapot.obj");
+    model_bunny = VG_ModelNew("bunny.obj");
+    model_teapot = VG_ModelNew("teapot.obj");
 
     sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);
     
-    printf("a\n");
-
-    const uint32_t BUNNYC;
+    const uint32_t BUNNYC = 2;
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
-    float background[3] = {0.0, 0.1, 0.3};
+    float background[4] = {0.0, 0.1, 0.3, 1.0};
     VG_BackgroundColorSet(background);
     Camera* camera = VG_CameraGet();
     VG_LightPositionSet((float[]){0.5, 0, 0});
     VG_LightColorSet((float[]){1.0, 1.0, 0.0});
     VG_LightAmbientColorSet(background);
-    printf("b\n");
     
     while (!VG_WindowShouldClose()) {
 	GAME_LightUpdate();
@@ -107,11 +103,9 @@ int main() {
 	VG_DrawingBegin();
 	GAME_HandleInput(camera);
 
-	printf("c\n");
 	GAME_BunniesDraw(bunnies, BUNNYC);
-	printf("d\n");
-	VG_ModelDrawAt(sun.model, sun.pos, sun.size);
 	
+	VG_ModelDrawAt(sun.model, sun.pos, sun.size);
 	
 	VG_DrawingEnd();
     }
