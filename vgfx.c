@@ -11,7 +11,7 @@
 #if 1
 #define iVG_Log(a) printf(a "\n")
 #else
-#define iVG_Log(a)
+#Define iVG_Log(a)
 #endif
 
 static GLFWwindow *window = NULL;
