@@ -78,10 +78,10 @@ const char* fragment_shader_source = "            \n"
     "         } else {                                         \n"
     "             direction = -normalize(bPos - light.dir);     \n"
     "             float distance = length(bPos - light.dir);    \n"
-    "             light_factor = 1.0/(1.0 + 0.1*distance + 0.01*distance*distance);\n"
+    "             light_factor = 1.0/(1.0 + distance*distance);\n"
     "         }                                                \n"
-    "         float diff = max(dot(direction, normal)*light_factor, 0.0);   \n"
-    "         vec3 diffuse = diff*light.color;                 \n"
+    "         float diff = max(dot(direction, normal), 0.0);   \n"
+    "         vec3 diffuse = diff*light_factor*light.color;                 \n"
     "         vec3 result  = refl*(ambient+diffuse);           \n"
     "         FragColor = vec4(result, 1.0);                   \n"
     "}                                                         \0";
@@ -96,9 +96,14 @@ void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
 void iVG_InputUpdate();
 void iVG_PollEvents();
 
+typedef struct {
+    uint32_t VAO;
+    uint32_t index_count;
+} Model;
+
 // MODELARENA
 typedef struct {
-    Mesh* base;
+    Model* base;
     uint32_t position;
     uint32_t size;
 } ModelArena;
@@ -107,7 +112,7 @@ static ModelArena model_arena;
 
 void     iVG_ModelArenaInit(uint32_t size);
 uint32_t iVG_ModelArenaBump();
-Mesh*    iVG_ModelArenaPointerGet(uint32_t model_handle);
+Model*   iVG_ModelArenaPointerGet(uint32_t model_handle);
 void     iVG_ModelArenaDestroy();
 
 // BUFFERING DATA
@@ -118,6 +123,8 @@ void  iVG_GLVertexArrayBind(VAO_t VAO);
 void  iVG_GLBufferData(uint32_t pointer, float* vertices, uint32_t arr_size, uint32_t flags, uint32_t stride);
 void  iVG_GLDrawTriangles(VAO_t amount);
 void  iVG_GLVertexArrayDestroy(VAO_t VAO);
+void  iVG_GLModelRender(Model *VAO);
+uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* indices, uint32_t icount);
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcound, uint32_t *indices, uint32_t icount);
 void  iVG_GLTransformSet(float* matrix);
 void  iVG_GLCameraUpdate();
@@ -365,8 +372,12 @@ void VG_MouseGet(float* out) {
 // MODEL
 uint32_t VG_ModelNew(char* path) {
     uint32_t model_handle = iVG_ModelArenaBump();
-    Mesh* mesh = iVG_ModelArenaPointerGet(model_handle);
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    Mesh* mesh = malloc(sizeof(Mesh));
     VMESH_LoadObj(mesh, path);
+    model->VAO = iVG_GLLoadVerticesIndexed(mesh->vertices, mesh->vertex_count,
+				     mesh->indices, mesh->index_count);
+    model->index_count = mesh->index_count;
     return model_handle;
 }
 
@@ -375,9 +386,8 @@ void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[stati
     VM44_Scale(transform, size);
     VM44_Translate(transform, pos);
     iVG_GLTransformSet(transform);
-    Mesh* mesh = iVG_ModelArenaPointerGet(model_handle);
-    iVG_GLRenderVerticesIndexed(mesh->vertices, mesh->vertex_count,
-				mesh->indices, mesh->index_count);
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    iVG_GLModelRender(model);
 }
 
 
@@ -444,6 +454,26 @@ void iVG_GLBufferVertices(Vertex* vertices, uint32_t count) {
     glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* indices, uint32_t icount) {
+    uint32_t VAO = iVG_GLVertexArrayNew();
+    iVG_GLVertexArrayBind(VAO);
+    
+    iVG_GLBufferVertices(vertices, vcount);
+    
+    iVG_GLBufferIndices(indices, icount, 0);
+    iVG_GLVertexArrayUnbind();
+    return VAO;
+}
+
+void iVG_GLModelRender(Model *model) {
+    iVG_GLVertexArrayBind(model->VAO);
+    glUseProgram(shader_program);
+    
+    glDrawElements(GL_TRIANGLES, model->index_count, GL_UNSIGNED_INT, NULL);
+
+    iVG_GLVertexArrayBind(0);
 }
 
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t *indices, uint32_t icount) {
@@ -606,7 +636,7 @@ void iVG_ModelArenaInit(uint32_t size) {
     model_arena.position = 1;
     if (size < 2) size = 2;
     model_arena.size = size;
-    model_arena.base = malloc(size*sizeof(Mesh));
+    model_arena.base = malloc(size*sizeof(uint32_t));
 }
 
 uint32_t iVG_ModelArenaBump() {
@@ -614,12 +644,12 @@ uint32_t iVG_ModelArenaBump() {
     model_arena.position++;
     if (model_arena.position >= model_arena.size) {
 	model_arena.size *=2;
-	model_arena.base = realloc(model_arena.base, model_arena.size*sizeof(Mesh));
+	model_arena.base = realloc(model_arena.base, model_arena.size*sizeof(uint32_t));
     }
     return temp;
 }
 
-Mesh* iVG_ModelArenaPointerGet(uint32_t model_handle) {
+Model* iVG_ModelArenaPointerGet(uint32_t model_handle) {
     if (model_handle > model_arena.position) {
 	assert(false && "Model handle is not valid (too big)");
     }

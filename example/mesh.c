@@ -56,7 +56,7 @@ void GAME_BunniesInit(Object bunnies[], uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
 	bunnies[i].model = model_bunny;
 	VM3_Set(bunnies[i].size, 0.5f, 0.5f, 0.5f);
-	VM3_Set(bunnies[i].pos,  0.f, 0.f, i  );
+	VM3_Set(bunnies[i].pos,  i%10, 0.f, i/10  );
     }
 }
 
@@ -90,23 +90,23 @@ int main() {
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);
     
-    const uint32_t BUNNYC = 10;
+    const uint32_t BUNNYC = 100;
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
-    float background[4] = {0.0, 0.1, 0.3, 1.0};
+    float background[4] = {0.1, 0.1, 0., 1.0};
     VG_BackgroundColorSet(background);
     Camera* camera = VG_CameraGet();
     VG_LightPositionSet((float[]){0.5, 0, 0});
     VG_LightColorSet((float[]){1.0, 1.0, 0.0});
     VG_LightAmbientColorSet(background);
 
-    char fpsstring[50];
+    char fpsstring[100];
     
     while (!VG_WindowShouldClose()) {
 	GAME_LightUpdate();
 
-	snprintf(fpsstring, 49, "FPS: %d", (uint32_t) VG_FPSGet());
+	snprintf(fpsstring, 100, "FPS: %d (%.6f)", (uint32_t) VG_FPSGet(), VG_DeltaTimeGet());
 
 	VG_WindowTitleSet(fpsstring);
 	
