@@ -66,9 +66,6 @@ const char* fragment_shader_source = "            \n"
     "{                                            \n"
     "         float refl = 0.8;                                \n"
     "        vec3 normal = normalize(bNormal);                \n"
-#if 0
-    "         FragColor = vec4(normalize(bNormal), 1.0);                   \n"
-#else
     "         vec3 direction;                                  \n"
     "         if (light.type == 0) {                           \n"
     "             direction = -normalize(light.dir);           \n"
@@ -79,7 +76,6 @@ const char* fragment_shader_source = "            \n"
     "         vec3 diffuse = diff*light.color;                 \n"
     "         vec3 result  = refl*(ambient+diffuse);           \n"
     "         FragColor = vec4(result, 1.0);                   \n"
-#endif
     "}                                                         \0";
 
 void iVG_RenderFlush();

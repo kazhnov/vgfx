@@ -4,6 +4,7 @@ MODE = $(DEBUG)
 PREFIX = LD_LIBRARY_PATH="./lib" LSAN_OPTIONS=print_indirect_leaks=0
 
 subs:
+	mkdir -p lib
 	git submodule foreach git pull origin main
 	(cd include/vmesh && make build -B)
 	cp include/vmesh/lib/libvmesh.so lib/

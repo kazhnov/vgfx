@@ -50,7 +50,7 @@ void GAME_HandleInput(Camera* camera) {
 }
 
 void GAME_BunniesInit(Object bunnies[], uint32_t count) {
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
 	bunnies[i].model = model_bunny;
 	VM3_Set(bunnies[i].size, 0.5f, 0.5f, 0.5f);
 	VM3_Set(bunnies[i].pos,  0.f, 0.f, i  );
@@ -58,7 +58,7 @@ void GAME_BunniesInit(Object bunnies[], uint32_t count) {
 }
 
 void GAME_BunniesDraw(Object bunnies[], uint32_t count) {
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
 	VG_ModelDrawAt(bunnies[i].model, bunnies[i].pos, bunnies[i].size);
     }
 }

@@ -62,9 +62,10 @@ void VG_CameraForwardGet(float* out);
 void VG_CameraRightGet(float* out);
 
 //LIGHT
-typedef enum LightType {
+typedef enum LightType: uint8_t {
     LIGHT_TYPE_DIRECTIONAL,
     LIGHT_TYPE_POINT,
+	
     LIGHT_TYPE_COUNT,
 } LightType;
 
