@@ -3,6 +3,9 @@ RELEASE = -O3
 MODE = $(DEBUG)
 PREFIX = LD_LIBRARY_PATH="./lib" LSAN_OPTIONS=print_indirect_leaks=0
 
+nix:
+	nix develop --extra-experimental-features nix-command --extra-experimental-features flakes
+
 subs:
 	mkdir -p lib
 	git submodule foreach git pull origin main

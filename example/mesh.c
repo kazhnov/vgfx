@@ -90,7 +90,7 @@ int main() {
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);
     
-    const uint32_t BUNNYC = 2;
+    const uint32_t BUNNYC = 10;
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
