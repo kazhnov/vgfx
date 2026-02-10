@@ -6,6 +6,8 @@
 
 static uint32_t model_bunny;
 static uint32_t model_teapot;
+static uint32_t shader_default;
+
 static float size[2] = {720.f, 720.f};
 
 typedef struct {
@@ -82,9 +84,11 @@ int main() {
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(true);
 
-    model_bunny = VG_ModelNew("bunny.obj");
+    shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
+    VG_ShaderUse(shader_default);
     
-    model_teapot = VG_ModelNew("teapot.obj");
+    model_bunny = VG_ModelNew("models/bunny.obj", 0);
+    model_teapot = VG_ModelNew("models/teapot.obj", 0);
 
     sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);

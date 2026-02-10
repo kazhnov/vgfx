@@ -18,10 +18,11 @@
 static GLFWwindow *window = NULL;
 static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 static float window_size[2];
-static uint32_t shader_program;
 static double current_time;
 static double previous_time;
 static bool vsync;
+static uint32_t shader_program;
+
 
 static Camera camera;
 static Light light;
@@ -40,65 +41,21 @@ const uint32_t normals = 3;
 const uint32_t uvs = 2;
 const uint32_t vert_size = dims + normals + uvs;
 
-const char* vertex_shader_source = "                     \n"
-    "#version 330 core                                   \n"
-    "layout (location = 0) in vec3 aPos;                 \n"
-    "layout (location = 1) in vec3 aNormal;               \n"
-    "layout (location = 2) in vec2 aTex;                 \n"
-    "uniform mat4 view;                                \n"
-    "uniform mat4 model;                             \n"
-    "uniform mat4 projection;                           \n"
-    "out vec3 bNormal;                                    \n"
-    "out vec3 bPos;                                    \n"
-    "void main()                                         \n"
-    "{                                                   \n"
-    "    bPos = vec3(model*vec4(aPos, 1.0));                  \n"
-    "    bNormal = mat3(transpose(inverse(model))) * aNormal; \n"
-    "    gl_Position = projection*view*model*vec4(aPos, 1.f);\n"
-    "}                                                   \0";
-
-const char* fragment_shader_source = "            \n"
-    "#version 330 core                            \n"
-    "out vec4 FragColor;                          \n"
-    "in vec3 bNormal;                             \n"
-    "in vec3 bPos;                                \n"
-    "uniform vec3 cameraPos;                      \n"
-    "uniform struct {                             \n"
-    "  vec3 dir; vec3 color;int type;             \n"
-    "} light;                                     \n"
-    "uniform vec3 ambient;                        \n"
-    "void main()                                  \n"
-    "{                                            \n"
-    "         float refl = 0.8;                                \n"
-    "         vec3 normal = normalize(bNormal);                \n"
-    "         vec3 direction;                                  \n"
-    "         float light_factor = 1;                          \n"
-    "         if (light.type == 0) {                           \n"
-    "             direction = -normalize(light.dir);           \n"
-    "         } else {                                         \n"
-    "             direction = -normalize(bPos - light.dir);     \n"
-    "             float distance = length(bPos - light.dir);    \n"
-    "             light_factor = 1.0/(1.0 + distance*distance);\n"
-    "         }                                                \n"
-    "         float diff = max(dot(direction, normal), 0.0);   \n"
-    "         vec3 diffuse = diff*light_factor*light.color;                 \n"
-    "         vec3 result  = refl*(ambient+diffuse);           \n"
-    "         FragColor = vec4(result, 1.0);                   \n"
-    "}                                                         \0";
-
 void iVG_RenderFlush();
 void iVG_KeysUpdate();
 void iVG_SetupOpengl();
-void iVG_ShadersInit();
 void iVG_FramebufferSizeCallback(GLFWwindow *window, int width, int height);
 void iVG_MouseCallback(GLFWwindow* window, double x, double y);
 void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void iVG_InputUpdate();
 void iVG_PollEvents();
 
+char* iVG_FileLoadToString(const char* path);
+
 typedef struct {
     uint32_t VAO;
     uint32_t index_count;
+    uint32_t shader;
 } Model;
 
 // MODELARENA
@@ -171,14 +128,11 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     
     VG_VSyncSet(0);
     
-    iVG_ShadersInit();
     current_time = glfwGetTime();
 
     camera.fov = V_PI/2;
     
     float mat[16] = VM44_IDENTITY;
-    glUseProgram(shader_program);
-    
     iVG_GLTransformSet(mat);
     iVG_ModelArenaInit(1024);
 }
@@ -370,7 +324,7 @@ void VG_MouseGet(float* out) {
 }
 
 // MODEL
-uint32_t VG_ModelNew(char* path) {
+uint32_t VG_ModelNew(char* path, uint32_t shader) {
     uint32_t model_handle = iVG_ModelArenaBump();
     Model* model = iVG_ModelArenaPointerGet(model_handle);
     Mesh* mesh = malloc(sizeof(Mesh));
@@ -378,6 +332,11 @@ uint32_t VG_ModelNew(char* path) {
     model->VAO = iVG_GLLoadVerticesIndexed(mesh->vertices, mesh->vertex_count,
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
+    if (shader) {
+	model->shader = shader;
+    } else {
+	model->shader = shader_program;
+    }
     return model_handle;
 }
 
@@ -469,38 +428,56 @@ uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* 
 
 void iVG_GLModelRender(Model *model) {
     iVG_GLVertexArrayBind(model->VAO);
-    glUseProgram(shader_program);
+    glUseProgram(model->shader);
     
     glDrawElements(GL_TRIANGLES, model->index_count, GL_UNSIGNED_INT, NULL);
 
     iVG_GLVertexArrayBind(0);
 }
 
-void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t *indices, uint32_t icount) {
-    uint32_t VAO = iVG_GLVertexArrayNew();
-    iVG_GLVertexArrayBind(VAO);
-    
-    iVG_GLBufferVertices(vertices, vcount);
-    
-    iVG_GLBufferIndices(indices, icount, 0);
+char* iVG_FileLoadToString(const char* path) {
+    FILE* file = fopen(path, "rb");
+    if (file == NULL) {
+	printf("ERROR: No file with path %s\n", path);
+	exit(1);
+    }
 
-    glUseProgram(shader_program);
-    
-    glDrawElements(GL_TRIANGLES, icount, GL_UNSIGNED_INT, NULL);
+    fseek(file, 0, SEEK_END);
+    uint32_t length = ftell(file);
+    rewind(file);
 
-    iVG_GLVertexArrayBind(0);
-    iVG_GLVertexArrayDestroy(VAO);    
+    char* buffer = (char*)malloc(length + 1);
+
+    size_t bytes_read = fread(buffer, 1, length, file);
+
+    if (bytes_read != length) {
+	fclose(file);
+	free(buffer);
+	printf("ERROR: Unable to read file\n");
+	exit(1);
+    }
+
+    buffer[length] = '\0';
+
+    fclose(file);
+    
+    return buffer;
 }
 
-void iVG_ShadersInit() {
-    int success;
-    uint32_t vertex_shader;
-    uint32_t fragment_shader;
+// SHADERS
+void VG_ShaderUse(uint32_t shader) {
+    shader_program = shader;
+}
 
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+uint32_t VG_ShaderLoad(const char* vertex_path, const char* fragment_path) {
+    uint32_t vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+
+    char* vertex_shader_source = iVG_FileLoadToString(vertex_path);
+    glShaderSource(vertex_shader, 1, (const char**)&vertex_shader_source, NULL);
     glCompileShader(vertex_shader);
+    free(vertex_shader_source);
     
+    int32_t success;
     glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
 
     if (!success) {
@@ -510,10 +487,12 @@ void iVG_ShadersInit() {
 	exit(1);
     }    
 
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+    uint32_t fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    char* fragment_shader_source = iVG_FileLoadToString(fragment_path);
+    glShaderSource(fragment_shader, 1, (const char**)&fragment_shader_source, NULL);
     glCompileShader(fragment_shader);
-
+    free(fragment_shader_source);
+    
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
 
     if (!success) {
@@ -523,7 +502,7 @@ void iVG_ShadersInit() {
 	exit(1);
     }
 
-    shader_program = glCreateProgram();
+    int32_t shader_program = glCreateProgram();
     glAttachShader(shader_program, vertex_shader);
     glAttachShader(shader_program, fragment_shader);
     glLinkProgram(shader_program);
@@ -538,7 +517,8 @@ void iVG_ShadersInit() {
     }
     
     glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);  
+    glDeleteShader(fragment_shader);
+    return shader_program;
 }
 
 void iVG_FramebufferSizeCallback(GLFWwindow *window, int width, int height) {

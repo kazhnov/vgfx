@@ -26,6 +26,7 @@ void VG_VSyncSet(bool);
 
 bool VG_VSyncGet();
 
+
 // BACKGROUND COLOR
 void VG_BackgroundColorGet(float* out);
 
@@ -38,12 +39,19 @@ void VG_WindowSizeGet(float* out);
 void VG_WindowSizeUpdate();
 
 
+// SHADERS
+
+uint32_t VG_ShaderLoad(const char* vertex_path, const char* fragment_path);
+
+void VG_ShaderUse(uint32_t shader);
+
 // FPS
 double VG_FPSGet();
 
 double VG_DeltaTimeGet();
 
 double VG_TimeGet();
+
 
 typedef struct {
     float position[3];
@@ -114,7 +122,7 @@ void VG_MouseDeltaGet(float* out);
 void VG_MouseGet(float* out);
 
 // MESHES
-uint32_t VG_ModelNew(char* path);
+uint32_t VG_ModelNew(char* path, uint32_t shader);
 void     VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]);
 
 // DRAWING SHAPES
