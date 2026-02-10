@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
 
 #if 0
@@ -29,6 +30,10 @@ static float ambient_color[3];
 static bool mouse_first = true;
 static float mouse_last[2];
 static float mouse_delta[2];
+
+static bool keys_just_pressed[512];
+static bool keys_pressed[512];
+void iVG_KeysJustPressedClear();
 
 const uint32_t dims = 3;
 const uint32_t normals = 3;
@@ -84,10 +89,11 @@ void iVG_SetupOpengl();
 void iVG_ShadersInit();
 void iVG_FramebufferSizeCallback(GLFWwindow *window, int width, int height);
 void iVG_MouseCallback(GLFWwindow* window, double x, double y);
+void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void iVG_InputUpdate();
 void iVG_PollEvents();
 
-// iMODEL
+// MODELARENA
 typedef struct {
     Mesh* base;
     uint32_t position;
@@ -136,6 +142,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, iVG_FramebufferSizeCallback);
     glfwSetCursorPosCallback(window, iVG_MouseCallback);
+    glfwSetKeyCallback(window, iVG_KeyCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (!gladLoadGLLoader((GLADloadproc)(glfwGetProcAddress))) {
 	printf("Failed to initiate GLAD\n");
@@ -318,7 +325,7 @@ void VG_DrawingBegin() {
 
 void VG_DrawingEnd() {
     iVG_RenderFlush();
-
+    iVG_KeysJustPressedClear();
 }
 
 
@@ -334,7 +341,7 @@ void VG_BackgroundClear() {
 
 // KEYS
 bool VG_KeyPressed(uint64_t key) {
-    return glfwGetKey(window, key) == GLFW_PRESS;
+    return keys_just_pressed[key];
 }
 
 bool VG_KeyDown(uint64_t key) {
@@ -562,6 +569,19 @@ void iVG_GLLightUpdate() {
     iVG_GLUniformVec3Set("light.color", light.color);
     iVG_GLUniformIntSet("light.type", light.type);
     iVG_GLUniformVec3Set("ambient", ambient_color);
+}
+
+void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+	keys_just_pressed[key] = true;
+	keys_pressed[key] = true;
+    } else if (action == GLFW_RELEASE) {
+	keys_pressed[key] = false;
+    }
+}
+
+void iVG_KeysJustPressedClear() {
+    memset(keys_just_pressed, 0, 512*sizeof(bool));
 }
 
 void iVG_MouseCallback(GLFWwindow* window, double x, double y) {

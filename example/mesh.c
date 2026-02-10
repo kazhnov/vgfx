@@ -41,7 +41,7 @@ void GAME_HandleInput(Camera* camera) {
     if (VG_KeyDown(VG_KEY_A)) {
 	VM3_Subtract(camera->position, right_scaled);
     }
-
+    
     float mouse_delta[2];
     float sensitivity = 0.003;
     VG_MouseDeltaGet(mouse_delta);
