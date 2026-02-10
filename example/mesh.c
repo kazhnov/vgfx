@@ -80,14 +80,14 @@ void GAME_LightUpdate() {
 }
 
 int main() {
-    VG_WindowOpen("Example: Clear Screen", size, 0);
+    VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(true);
 
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
     VG_ShaderUse(shader_default);
     
-    model_bunny = VG_ModelNew("models/bunny.obj", 0);
+    model_bunny = VG_ModelNew("include/vmesh/bunny_flatobj.obj", 0);
     model_teapot = VG_ModelNew("models/teapot.obj", 0);
 
     sun.model = model_teapot;
