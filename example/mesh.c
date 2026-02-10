@@ -41,6 +41,9 @@ void GAME_HandleInput(Camera* camera) {
     if (VG_KeyDown(VG_KEY_A)) {
 	VM3_Subtract(camera->position, right_scaled);
     }
+    if (VG_KeyPressed(VG_KEY_SPACE)) {
+	printf("jump!\n");
+    }
     
     float mouse_delta[2];
     float sensitivity = 0.003;

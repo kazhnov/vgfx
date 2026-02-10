@@ -143,6 +143,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     glfwSetFramebufferSizeCallback(window, iVG_FramebufferSizeCallback);
     glfwSetCursorPosCallback(window, iVG_MouseCallback);
     glfwSetKeyCallback(window, iVG_KeyCallback);
+    
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (!gladLoadGLLoader((GLADloadproc)(glfwGetProcAddress))) {
 	printf("Failed to initiate GLAD\n");
@@ -313,7 +314,7 @@ void VG_LightAmbientColorGet(float* out) {
 
 // DRAWING MODES
 void VG_DrawingBegin() {
-
+    iVG_KeysJustPressedClear();
     iVG_InputUpdate();
     iVG_GLCameraUpdate();
     iVG_GLLightUpdate();
@@ -325,7 +326,7 @@ void VG_DrawingBegin() {
 
 void VG_DrawingEnd() {
     iVG_RenderFlush();
-    iVG_KeysJustPressedClear();
+    
 }
 
 
