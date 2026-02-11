@@ -58,6 +58,7 @@ typedef struct {
     uint32_t VAO;
     uint32_t index_count;
     uint32_t shader;
+    float color[3];
 } Model;
 
 // MODELARENA
@@ -86,10 +87,13 @@ void  iVG_GLModelRender(Model *VAO);
 uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* indices, uint32_t icount);
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcound, uint32_t *indices, uint32_t icount);
 void  iVG_GLTransformSet(float* matrix);
+
 void  iVG_GLCameraUpdate();
 void  iVG_GLLightUpdate();
-void  iVG_GLUniformVec3Set(char* name, float* vec);
 void  iVG_GLPerspectiveUpdate();
+
+void  iVG_GLUniformVec3Set(char* name, float* vec);
+
 
 
 // INITIALIZATION AND CLOSING
@@ -334,23 +338,27 @@ uint32_t VG_ModelNew(char* path, uint32_t shader) {
     model->VAO = iVG_GLLoadVerticesIndexed(mesh->vertices, mesh->vertex_count,
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
-    if (shader) {
-	model->shader = shader;
-    } else {
-	model->shader = shader_program;
-    }
+    model->shader = shader;
     return model_handle;
 }
 
 void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]) {
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
     float transform[16] = VM44_IDENTITY;
     VM44_Scale(transform, size);
     VM44_Translate(transform, pos);
+
+    VG_ShaderUse(model->shader);
     iVG_GLTransformSet(transform);
-    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    iVG_GLUniformVec3Set("material.color", model->color);
+    
     iVG_GLModelRender(model);
 }
 
+void VG_ModelColorSet(uint32_t model_handle, float color[static 3]) {
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    VM3_Copy(model->color, color);
+}
 
 // INTERNALS
 void iVG_RenderFlush() {
@@ -430,7 +438,6 @@ uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* 
 
 void iVG_GLModelRender(Model *model) {
     iVG_GLVertexArrayBind(model->VAO);
-    glUseProgram(model->shader);
     
     glDrawElements(GL_TRIANGLES, model->index_count, GL_UNSIGNED_INT, NULL);
 
@@ -469,6 +476,10 @@ char* iVG_FileLoadToString(const char* path) {
 // SHADERS
 void VG_ShaderUse(uint32_t shader) {
     shader_program = shader;
+    iVG_GLCameraUpdate();
+    iVG_GLLightUpdate();
+    iVG_GLPerspectiveUpdate();
+    glUseProgram(shader_program);
 }
 
 uint32_t VG_ShaderLoad(const char* vertex_path, const char* fragment_path) {

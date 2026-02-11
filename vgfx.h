@@ -122,6 +122,7 @@ void VG_MouseGet(float* out);
 // MESHES
 uint32_t VG_ModelNew(char* path, uint32_t shader);
 void     VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]);
+void     VG_ModelColorSet(uint32_t model_handle, float color[static 3]);
 
 // DRAWING SHAPES
 

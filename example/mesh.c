@@ -9,6 +9,7 @@
 static uint32_t model_bunny;
 static uint32_t model_teapot;
 static uint32_t shader_default;
+static uint32_t shader_light;
 
 static float size[2] = {720.f, 720.f};
 
@@ -79,6 +80,7 @@ void GAME_LightUpdate() {
     VG_LightPositionSet(pos);
     VG_LightColorSet(pos);
     VM3_Copy(sun.pos, pos);
+    VG_ModelColorSet(sun.model, pos);
 }
 
 int main() {
@@ -86,12 +88,14 @@ int main() {
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(true);
 
+    shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
-    VG_ShaderUse(shader_default);
     
-    model_bunny = VG_ModelNew("include/vmesh/bunny_flatobj.obj", 0);
-    model_teapot = VG_ModelNew("models/teapot.obj", 0);
-
+    model_teapot = VG_ModelNew("models/teapot.obj", shader_light);
+    model_bunny = VG_ModelNew("include/vmesh/bunny_flatobj.obj", shader_default);
+    VG_ModelColorSet(model_teapot, VRGB_YELLOW);
+    VG_ModelColorSet(model_bunny, VRGB_WHITE);
+    
     sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);

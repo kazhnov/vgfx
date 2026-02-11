@@ -10,6 +10,10 @@ uniform struct {
     int type;
 } light;
 uniform vec3 ambient;
+uniform struct {
+    vec3 color;
+} material;
+
 
 void main()
 {
