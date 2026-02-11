@@ -1,4 +1,6 @@
 #include "vgfx.h"
+#include "include/vmath/vmath.h"
+#include "include/vcolor/vcolor.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "include/vmesh/vmesh.h"

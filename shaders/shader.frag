@@ -28,4 +28,5 @@ void main()
     vec3 diffuse = diff*light_factor*light.color;
     vec3 result  = refl*(ambient+diffuse);
     FragColor = vec4(result, 1.0);
+    FragColor = pow(FragColor, vec4(vec3(1./2.2), 1));
 }

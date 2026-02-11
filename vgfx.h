@@ -1,5 +1,3 @@
-#include "include/vmath/vmath.h"
-#include "include/vcolor/vcolor.h"
 #include <stdbool.h>
 #include <stdint.h>
 #define VG_KEY_SPACE 32
