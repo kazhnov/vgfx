@@ -339,6 +339,7 @@ uint32_t VG_ModelNew(char* path, uint32_t shader) {
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
     model->shader = shader;
+    VM3_Set(model->color, 0, 0, 0);
     return model_handle;
 }
 

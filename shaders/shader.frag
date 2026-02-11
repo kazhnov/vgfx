@@ -14,7 +14,6 @@ uniform struct {
     vec3 color;
 } material;
 
-
 void main()
 {
     float refl = 0.8;

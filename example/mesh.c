@@ -93,8 +93,6 @@ int main() {
     
     model_teapot = VG_ModelNew("models/teapot.obj", shader_light);
     model_bunny = VG_ModelNew("include/vmesh/bunny_flatobj.obj", shader_default);
-    VG_ModelColorSet(model_teapot, VRGB_YELLOW);
-    VG_ModelColorSet(model_bunny, VRGB_WHITE);
     
     sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
