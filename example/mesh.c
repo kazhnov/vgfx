@@ -86,7 +86,7 @@ void GAME_LightUpdate() {
 int main() {
     VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
-    VG_VSyncSet(true);
+    VG_VSyncSet(false);
 
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");

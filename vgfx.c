@@ -23,12 +23,15 @@ static float window_size[2];
 static double current_time;
 static double previous_time;
 static bool vsync;
-static uint32_t shader_program;
-
+static uint32_t shader_current;
 
 static Camera camera;
 static Light light;
 static float ambient_color[3];
+
+static float matrix_view[16];
+static float matrix_projection[16];
+
 
 static bool mouse_first = true;
 static float mouse_last[2];
@@ -88,9 +91,12 @@ uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* 
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcound, uint32_t *indices, uint32_t icount);
 void  iVG_GLTransformSet(float* matrix);
 
-void  iVG_GLCameraUpdate();
-void  iVG_GLLightUpdate();
-void  iVG_GLPerspectiveUpdate();
+void iVG_GLCameraUpdate();
+void iVG_GLPerspectiveUpdate();
+void iVG_GLShaderCameraUpdate();
+void iVG_GLShaderLightUpdate();
+void iVG_GLShaderProjectionUpdate();
+
 
 void  iVG_GLUniformVec3Set(char* name, float* vec);
 
@@ -287,7 +293,6 @@ void VG_DrawingBegin() {
     iVG_KeysJustPressedClear();
     iVG_InputUpdate();
     iVG_GLCameraUpdate();
-    iVG_GLLightUpdate();
     iVG_GLPerspectiveUpdate();
     VG_Clear(background_color);
     previous_time = current_time;
@@ -476,11 +481,11 @@ char* iVG_FileLoadToString(const char* path) {
 
 // SHADERS
 void VG_ShaderUse(uint32_t shader) {
-    shader_program = shader;
-    iVG_GLCameraUpdate();
-    iVG_GLLightUpdate();
-    iVG_GLPerspectiveUpdate();
-    glUseProgram(shader_program);
+    shader_current = shader;
+    glUseProgram(shader);
+    iVG_GLShaderCameraUpdate();
+    iVG_GLShaderLightUpdate();
+    iVG_GLShaderProjectionUpdate();
 }
 
 uint32_t VG_ShaderLoad(const char* vertex_path, const char* fragment_path) {
@@ -558,41 +563,45 @@ void iVG_VertexColoredGet(float* point, float* color, float* out) {
 }
 
 void  iVG_GLTransformSet(float* matrix) {
-    uint32_t transform_loc = glGetUniformLocation(shader_program, "model");
+    uint32_t transform_loc = glGetUniformLocation(shader_current, "model");
     glUniformMatrix4fv(transform_loc, 1, GL_TRUE, matrix);
 }
 
+void iVG_GLShaderProjectionUpdate() {
+    uint32_t projection_loc = glGetUniformLocation(shader_current, "projection");
+    glUniformMatrix4fv(projection_loc, 1, GL_TRUE, matrix_projection);
+}
 
 void iVG_GLPerspectiveUpdate() {
-    uint32_t perspective_loc = glGetUniformLocation(shader_program, "projection");
-    float matrix[16];
     float size[2];
     VG_WindowSizeGet(size);
-    VM44_ProjectionPerspective(matrix, camera.fov, size[0]/size[1], 0.1, 100);
-    glUniformMatrix4fv(perspective_loc, 1, GL_TRUE, matrix);
+    VM44_ProjectionPerspective(matrix_projection, camera.fov, size[0]/size[1], 0.1, 100);
 }
 
 void iVG_GLUniformVec3Set(char* name, float* vec) {
-    uint32_t loc = glGetUniformLocation(shader_program, name);
+    uint32_t loc = glGetUniformLocation(shader_current, name);
     glUniform3fv(loc, 1, vec);
 }
 
 void iVG_GLUniformIntSet(char *name, int i) {
-    uint32_t loc = glGetUniformLocation(shader_program, name);
+    uint32_t loc = glGetUniformLocation(shader_current, name);
     glUniform1i(loc, i);
 }
 
-void iVG_GLCameraUpdate() {
-    uint32_t camera_loc = glGetUniformLocation(shader_program, "view");
-    float matrix[16];
-    float out[16];
-    VM44_V3A3(camera.position, camera.rotation, matrix);
-    VM44_InverseO(matrix, out);
-    glUniformMatrix4fv(camera_loc, 1, GL_TRUE, out);
+void iVG_GLShaderCameraUpdate() {
+    uint32_t view_loc = glGetUniformLocation(shader_current, "view");
     iVG_GLUniformVec3Set("cameraPos", camera.position);
+    glUniformMatrix4fv(view_loc, 1, GL_TRUE, matrix_view);
 }
 
-void iVG_GLLightUpdate() {
+void iVG_GLCameraUpdate() {
+    float out[16];
+    VM44_V3A3(camera.position, camera.rotation, matrix_view);
+    VM44_InverseO(matrix_view, out);
+    VM44_Copy(matrix_view, out);
+}
+
+void iVG_GLShaderLightUpdate() {
     iVG_GLUniformVec3Set("light.dir", light.direction);
     iVG_GLUniformVec3Set("light.color", light.color);
     iVG_GLUniformIntSet("light.type", light.type);
