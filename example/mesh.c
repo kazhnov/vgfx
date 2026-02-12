@@ -10,6 +10,7 @@ static uint32_t model_bunny;
 static uint32_t model_teapot;
 static uint32_t shader_default;
 static uint32_t shader_light;
+static uint32_t flashlight;
 
 static float size[2] = {720.f, 720.f};
 
@@ -21,6 +22,7 @@ typedef struct {
 } Object;
 
 static Object sun;
+static uint32_t sunlight;
 
 void GAME_HandleInput(Camera* camera) {
     double dt = VG_DeltaTimeGet();
@@ -73,48 +75,65 @@ void GAME_BunniesDraw(Object bunnies[], uint32_t count) {
 }
 
 
-void GAME_LightUpdate() {
+void GAME_LightUpdate(Camera* camera) {
+    PointLight* light = VG_PointLightGet(sunlight);
     double time = VG_TimeGet();
     float pos[3];
+    pos[2] = 0;
     pos[1] = fabs(cosf(time));
     pos[0] = fabs(sinf(time));
-    VG_LightPositionSet(pos);
-    VG_LightColorSet(pos);
     VM3_Copy(sun.pos, pos);
+    VM3_Copy(light->position, pos);
+    VM3_Copy(light->color, pos);
     VG_ModelColorSet(sun.model, pos);
+    
+
+    FlashLight* flash_light = VG_FlashLightGet(flashlight);
+    VM3_Copy(flash_light->position, camera->position);
+    float direction[3] = {0, 0, -1};
+    VM3_RotateY(direction, camera->rotation[1]);
+    VM3_Copy(flash_light->direction, direction);
+    VM3_Copy(flash_light->color, VRGB_BLUE);
+    flash_light->angle = V_PI/12;
+    flash_light->cutoff = V_PI/12;
 }
 
 int main() {
     VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
-    VG_VSyncSet(true);
+    VG_VSyncSet(false);
 
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
     
     model_teapot = VG_ModelNew("models/teapot.obj", shader_light);
     model_bunny = VG_ModelNew("include/vmesh/bunny_flatobj.obj", shader_default);
+
+    flashlight = VG_FlashLightCreate();
     
     sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);
     VM3_Set(sun.rot, 5, 5, 5);
+
+    uint32_t direct_handle = VG_DirectLightCreate();
+    DirectLight* direct_light = VG_DirectLightGet(direct_handle);
+    VM3_Copy(direct_light->color, VRGB_YELLOW);
+    VM3_Set(direct_light->direction, 0, 1, 0);
     
     const uint32_t BUNNYC = 100;
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
-    float background[4] = {0.1, 0.1, 0., 1.0};
-    VG_BackgroundColorSet(background);
-    Camera* camera = VG_CameraGet();
-    VG_LightPositionSet((float[]){0.5, 0, 0});
-    VG_LightColorSet((float[]){1.0, 1.0, 0.0});
-    VG_LightAmbientColorSet(background);
+    VG_BackgroundColorSet(VRGBA_BLACK);
 
-    char fpsstring[100];
+    sunlight = VG_PointLightCreate();
     
+    char fpsstring[100];
+
+    Camera* camera = VG_CameraGet();
     while (!VG_WindowShouldClose()) {
-	GAME_LightUpdate();
+	GAME_LightUpdate(camera);
 
 	snprintf(fpsstring, 100, "FPS: %d (%.6f)", (uint32_t) VG_FPSGet(), VG_DeltaTimeGet());
 

@@ -68,32 +68,35 @@ void VG_CameraForwardGet(float* out);
 void VG_CameraRightGet(float* out);
 
 //LIGHT
-typedef enum LightType: uint8_t {
-    LIGHT_TYPE_DIRECTIONAL,
-    LIGHT_TYPE_POINT,
-	
-    LIGHT_TYPE_COUNT,
-} LightType;
+typedef struct {
+    float position[3];
+    float color[3];
+} PointLight;
 
 typedef struct {
     float direction[3];
     float color[3];
-    LightType type;
-} Light;
+} DirectLight;
 
-Light *VG_LightGet();
+typedef struct {
+    float direction[3];
+    float position[3];
+    float color[3];
+    float angle;
+    float cutoff;
+} FlashLight;
 
-void VG_LightDirectionSet(float* dir);
-void VG_LightDirectionGet(float* out);
 
-void VG_LightPositionSet(float* dir);
-void VG_LightPositionGet(float* out);
+uint32_t VG_FlashLightCreate();
+uint32_t VG_DirectLightCreate();
+uint32_t VG_PointLightCreate();
+uint32_t VG_FlashLightDestroy();
+uint32_t VG_DirectLightDestroy();
+uint32_t VG_PointLightDestroy();
 
-void VG_LightColorSet(float* color);
-void VG_LightColorGet(float* out);
-
-void VG_LightAmbientColorSet(float* color);
-void VG_LightAmbientColorGet(float* out);
+FlashLight*  VG_FlashLightGet(uint32_t light);
+DirectLight* VG_DirectLightGet(uint32_t light);
+PointLight*  VG_PointLightGet(uint32_t light);
 
 // DRAWING MODES
 void VG_DrawingBegin();

@@ -26,12 +26,9 @@ static bool vsync;
 static uint32_t shader_current;
 
 static Camera camera;
-static Light light;
-static float ambient_color[3];
 
 static float matrix_view[16];
 static float matrix_projection[16];
-
 
 static bool mouse_first = true;
 static float mouse_last[2];
@@ -45,6 +42,17 @@ const uint32_t dims = 3;
 const uint32_t normals = 3;
 const uint32_t uvs = 2;
 const uint32_t vert_size = dims + normals + uvs;
+
+
+#define POINT_LIGHT_MAX_COUNT  8
+#define DIRECT_LIGHT_MAX_COUNT 8
+#define FLASH_LIGHT_MAX_COUNT  2
+PointLight  pointLights[POINT_LIGHT_MAX_COUNT];
+DirectLight directLights[DIRECT_LIGHT_MAX_COUNT];
+FlashLight  flashLights[FLASH_LIGHT_MAX_COUNT];
+uint32_t pointLightCount = 0;
+uint32_t directLightCount = 0;
+uint32_t flashLightCount = 0;
 
 void iVG_RenderFlush();
 void iVG_KeysUpdate();
@@ -91,15 +99,20 @@ uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* 
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcound, uint32_t *indices, uint32_t icount);
 void  iVG_GLTransformSet(float* matrix);
 
+
+void iVG_LightInit();
+
 void iVG_GLCameraUpdate();
 void iVG_GLPerspectiveUpdate();
+void iVG_GLLightUpdate();
 void iVG_GLShaderCameraUpdate();
 void iVG_GLShaderLightUpdate();
 void iVG_GLShaderProjectionUpdate();
 
 
-void  iVG_GLUniformVec3Set(char* name, float* vec);
-
+void iVG_GLUniformVec3Set(char* name, float* vec);
+void iVG_GLUniformFloatSet(char* name, float value);
+void iVG_GLUniformIntSet(char *name, int value);
 
 
 // INITIALIZATION AND CLOSING
@@ -147,6 +160,7 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
     float mat[16] = VM44_IDENTITY;
     iVG_GLTransformSet(mat);
     iVG_ModelArenaInit(1024);
+    iVG_LightInit();
 }
 
 bool VG_WindowShouldClose() {
@@ -246,47 +260,47 @@ void VG_CameraSet(Camera camera) {
     VG_CameraRotationSet(camera.rotation);
 }
 
+
 //LIGHT
-Light *VG_LightGet() {
-    return &light;
+uint32_t VG_FlashLightCreate() {
+    if (flashLightCount >= FLASH_LIGHT_MAX_COUNT - 1) {
+	fprintf(stderr, "Too many flashlights");
+	exit(1);
+    }
+    return flashLightCount++;
+}
+uint32_t VG_DirectLightCreate() {
+    if (directLightCount >= DIRECT_LIGHT_MAX_COUNT - 1) {
+	fprintf(stderr, "Too many direct lights");
+	exit(1);
+    }
+    return directLightCount++;
+}
+uint32_t VG_PointLightCreate() {
+    if (pointLightCount >= POINT_LIGHT_MAX_COUNT - 1) {
+	fprintf(stderr, "Too many point lights");
+	exit(1);
+    }
+    return pointLightCount++;
 }
 
-void VG_LightDirectionSet(float *dir) {
-    VM3_Copy(light.direction, dir);
-    light.type = LIGHT_TYPE_DIRECTIONAL;
+FlashLight*  VG_FlashLightGet(uint32_t light) {
+    return flashLights + light;
 }
 
-void VG_LightDirectionGet(float* out) {
-    VM3_Copy(out, light.direction);
+DirectLight* VG_DirectLightGet(uint32_t light) {
+    return directLights + light;
 }
 
-void VG_LightPositionSet(float* dir) {
-    VM3_Copy(light.direction, dir);
-    light.type = LIGHT_TYPE_POINT;
+PointLight*  VG_PointLightGet(uint32_t light) {
+    return pointLights + light;
 }
 
-void VG_LightPositionGet(float* out) {
-    VM3_Copy(out, light.direction);
+void iVG_LightInit() {
+    memset(directLights, 0, sizeof(DirectLight)*DIRECT_LIGHT_MAX_COUNT);
+    memset(pointLights,  0, sizeof(PointLight)*POINT_LIGHT_MAX_COUNT);
+    memset(flashLights,  0, sizeof(FlashLight)*FLASH_LIGHT_MAX_COUNT);
 }
-
-
-void VG_LightColorSet(float* color) {
-    VM3_Copy(light.color, color);
-}
-
-void VG_LightColorGet(float* out) {
-    VM3_Copy(out, light.color);
-}
-
-void VG_LightAmbientColorSet(float* color) {
-    VM3_Copy(ambient_color, color);
-}
-
-void VG_LightAmbientColorGet(float* out) {
-    VM3_Copy(out, ambient_color);
-}
-
-
 
 // DRAWING MODES
 void VG_DrawingBegin() {
@@ -344,7 +358,7 @@ uint32_t VG_ModelNew(char* path, uint32_t shader) {
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
     model->shader = shader;
-    VM3_Set(model->color, 0, 0, 0);
+    VM3_Set(model->color, 1, 1, 1);
     return model_handle;
 }
 
@@ -579,6 +593,10 @@ void iVG_GLPerspectiveUpdate() {
     VM44_ProjectionPerspective(matrix_projection, camera.fov, size[0]/size[1], 0.1, 100);
 }
 
+void iVG_GLLightUpdate() {
+    
+}
+
 void iVG_GLUniformVec3Set(char* name, float* vec) {
     uint32_t loc = glGetUniformLocation(shader_current, name);
     glUniform3fv(loc, 1, vec);
@@ -587,6 +605,12 @@ void iVG_GLUniformVec3Set(char* name, float* vec) {
 void iVG_GLUniformIntSet(char *name, int i) {
     uint32_t loc = glGetUniformLocation(shader_current, name);
     glUniform1i(loc, i);
+}
+
+
+void iVG_GLUniformFloatSet(char *name, float f) {
+    uint32_t loc = glGetUniformLocation(shader_current, name);
+    glUniform1f(loc, f);
 }
 
 void iVG_GLShaderCameraUpdate() {
@@ -603,10 +627,31 @@ void iVG_GLCameraUpdate() {
 }
 
 void iVG_GLShaderLightUpdate() {
-    iVG_GLUniformVec3Set("light.dir", light.direction);
-    iVG_GLUniformVec3Set("light.color", light.color);
-    iVG_GLUniformIntSet("light.type", light.type);
-    iVG_GLUniformVec3Set("ambient", ambient_color);
+    char name[50];
+    for(uint32_t i = 0; i < DIRECT_LIGHT_MAX_COUNT; i++) {
+	snprintf(name, 49, "directLights[%d].direction", i);
+	iVG_GLUniformVec3Set(name, directLights[i].direction);
+	snprintf(name, 49, "directLights[%d].color", i);
+	iVG_GLUniformVec3Set(name, directLights[i].color);
+    }
+    for (uint32_t i = 0; i < POINT_LIGHT_MAX_COUNT; i++) {
+	snprintf(name, 49, "pointLights[%d].position", i);
+	iVG_GLUniformVec3Set(name, pointLights[i].position);
+	snprintf(name, 49, "pointLights[%d].color", i);
+	iVG_GLUniformVec3Set(name, pointLights[i].color);
+    }
+    for (uint32_t i = 0; i < FLASH_LIGHT_MAX_COUNT; i++) {
+	snprintf(name, 49, "flashLights[%d].position", i);
+	iVG_GLUniformVec3Set(name, flashLights[i].position);
+	snprintf(name, 49, "flashLights[%d].direction", i);
+	iVG_GLUniformVec3Set(name, flashLights[i].direction);
+	snprintf(name, 49, "flashLights[%d].color", i);
+	iVG_GLUniformVec3Set(name, flashLights[i].color);
+	snprintf(name, 49, "flashLights[%d].angle", i);
+	iVG_GLUniformFloatSet(name, flashLights[i].angle);
+	snprintf(name, 49, "flashLights[%d].cutoff", i);
+	iVG_GLUniformFloatSet(name, flashLights[i].cutoff);
+    }
 }
 
 void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
