@@ -496,6 +496,7 @@ char* iVG_FileLoadToString(const char* path) {
 
 // SHADERS
 void VG_ShaderUse(uint32_t shader) {
+    if (shader_current == shader) return;
     shader_current = shader;
     glUseProgram(shader);
     iVG_GLShaderCameraUpdate();
