@@ -348,10 +348,11 @@ uint32_t VG_ModelNew(char* path, uint32_t shader) {
     return model_handle;
 }
 
-void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float size[static 3]) {
+void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float rotation[static 3], float size[static 3]) {
     Model* model = iVG_ModelArenaPointerGet(model_handle);
     float transform[16] = VM44_IDENTITY;
     VM44_Scale(transform, size);
+    VM44_Rotate(transform, rotation);
     VM44_Translate(transform, pos);
 
     VG_ShaderUse(model->shader);

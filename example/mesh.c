@@ -16,6 +16,7 @@ static float size[2] = {720.f, 720.f};
 typedef struct {
     float pos[3];
     float size[3];
+    float rot[3];
     uint32_t model;
 } Object;
 
@@ -67,7 +68,7 @@ void GAME_BunniesInit(Object bunnies[], uint32_t count) {
 
 void GAME_BunniesDraw(Object bunnies[], uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
-	VG_ModelDrawAt(bunnies[i].model, bunnies[i].pos, bunnies[i].size);
+	VG_ModelDrawAt(bunnies[i].model, bunnies[i].pos, bunnies[i].rot, bunnies[i].size);
     }
 }
 
@@ -86,7 +87,7 @@ void GAME_LightUpdate() {
 int main() {
     VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
-    VG_VSyncSet(false);
+    VG_VSyncSet(true);
 
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
@@ -97,6 +98,7 @@ int main() {
     sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);
+    VM3_Set(sun.rot, 5, 5, 5);
     
     const uint32_t BUNNYC = 100;
     Object bunnies[BUNNYC];
@@ -123,7 +125,7 @@ int main() {
 
 	GAME_BunniesDraw(bunnies, BUNNYC);
 	
-	VG_ModelDrawAt(sun.model, sun.pos, sun.size);
+	VG_ModelDrawAt(sun.model, sun.pos, sun.rot, sun.size);
 	
 	VG_DrawingEnd();
     }
