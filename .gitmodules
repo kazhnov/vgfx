@@ -7,3 +7,6 @@
 [submodule "include/vmesh"]
 	path = include/vmesh
 	url = https://github.com/kazhnov/vmesh
+[submodule "include/vtex"]
+	path = include/vtex
+	url = https://github.com/kazhnov/vtex

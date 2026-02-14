@@ -8,13 +8,14 @@ subs:
 	mkdir -p lib
 	git submodule foreach git pull origin main
 	(cd include/vmesh && make build -B)
+	(cd include/vtex && make build -B)
 
 build: vgfx.c
 	mkdir -p include build lib build/examples
 	cp vgfx.h include/
 	cc -fPIC -I./include/ -c vgfx.c -o build/vgfx.o $(MODE)
 	cc -fPIC -I./include/ -c glad.c -o build/glad.o $(MODE)
-	ar rc lib/libvgfx.a build/*.o include/vmesh/build/*.o
+	ar rc lib/libvgfx.a build/*.o include/vmesh/build/*.o include/vtex/build/*.o
 
 clear: example/clear_screen.c build
 	cc example/clear_screen.c -o build/examples/clear -L./lib -lm -lvgfx -lglfw $(MODE)

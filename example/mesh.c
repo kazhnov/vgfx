@@ -1,6 +1,5 @@
 #define _VMATH_IMPLEMENTATION_
 #define _VCOLOR_IMPLEMENTATION_
-#include "../include/vmath/vmath.h"
 #include "../include/vcolor/vcolor.h"
 #include "../vgfx.h"
 #include <string.h>

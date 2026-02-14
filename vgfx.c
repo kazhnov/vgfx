@@ -1,6 +1,6 @@
 #include "vgfx.h"
-#include "include/vmath/vmath.h"
 #include "include/vcolor/vcolor.h"
+#include "include/vtex/vtex.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "include/vmesh/vmesh.h"
@@ -18,30 +18,30 @@
 #endif
 
 static GLFWwindow *window = NULL;
-static float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-static float window_size[2];
-static double current_time;
-static double previous_time;
-static bool vsync;
-static uint32_t shader_current;
+static f32 background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+static f32 window_size[2];
+static f64 current_time;
+static f64 previous_time;
+static b8 vsync;
+static u32 shader_current;
 
 static Camera camera;
 
-static float matrix_view[16];
-static float matrix_projection[16];
+static f32 matrix_view[16];
+static f32 matrix_projection[16];
 
-static bool mouse_first = true;
-static float mouse_last[2];
-static float mouse_delta[2];
+static b8  mouse_first = true;
+static f32 mouse_last[2];
+static f32 mouse_delta[2];
 
-static bool keys_just_pressed[512];
-static bool keys_pressed[512];
+static b8 keys_just_pressed[512];
+static b8 keys_pressed[512];
 void iVG_KeysJustPressedClear();
 
-const uint32_t dims = 3;
-const uint32_t normals = 3;
-const uint32_t uvs = 2;
-const uint32_t vert_size = dims + normals + uvs;
+const u32 dims = 3;
+const u32 normals = 3;
+const u32 uvs = 2;
+const u32 vert_size = dims + normals + uvs;
 
 
 #define POINT_LIGHT_MAX_COUNT  8
@@ -50,15 +50,15 @@ const uint32_t vert_size = dims + normals + uvs;
 PointLight  pointLights[POINT_LIGHT_MAX_COUNT];
 DirectLight directLights[DIRECT_LIGHT_MAX_COUNT];
 FlashLight  flashLights[FLASH_LIGHT_MAX_COUNT];
-uint32_t pointLightCount = 0;
-uint32_t directLightCount = 0;
-uint32_t flashLightCount = 0;
+u32 pointLightCount = 0;
+u32 directLightCount = 0;
+u32 flashLightCount = 0;
 
 void iVG_RenderFlush();
 void iVG_KeysUpdate();
 void iVG_SetupOpengl();
 void iVG_FramebufferSizeCallback(GLFWwindow *window, int width, int height);
-void iVG_MouseCallback(GLFWwindow* window, double x, double y);
+void iVG_MouseCallback(GLFWwindow* window, f64 x, f64 y);
 void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void iVG_InputUpdate();
 void iVG_PollEvents();
@@ -66,38 +66,53 @@ void iVG_PollEvents();
 char* iVG_FileLoadToString(const char* path);
 
 typedef struct {
-    uint32_t VAO;
-    uint32_t index_count;
-    uint32_t shader;
-    float color[3];
+    u32 VAO;
+    u32 index_count;
+    u32 shader;
+    f32 color[3];
+    u32 texture;
 } Model;
 
 // MODELARENA
 typedef struct {
     Model* base;
-    uint32_t position;
-    uint32_t size;
+    u32 position;
+    u32 size;
 } ModelArena;
 
 static ModelArena model_arena;
 
-void     iVG_ModelArenaInit(uint32_t size);
-uint32_t iVG_ModelArenaBump();
-Model*   iVG_ModelArenaPointerGet(uint32_t model_handle);
+void     iVG_ModelArenaInit(u32 size);
+u32 iVG_ModelArenaBump();
+Model*   iVG_ModelArenaPointerGet(u32 model_handle);
 void     iVG_ModelArenaDestroy();
 
+typedef struct {
+    u32* base;
+    u32 position;
+    u32 size;
+} TextureArena;
+
+static TextureArena texture_arena;
+
+void      iVG_TextureArenaInit(u32 size);
+u32  iVG_TextureArenaBump();
+u32* iVG_TextureArenaPointerGet(u32 model_handle);
+void      iVG_TextureArenaDestroy();
+
+
 // BUFFERING DATA
-typedef uint32_t VAO_t;
-typedef uint32_t VBO_t;
+typedef u32 VAO_t;
+typedef u32 VBO_t;
 VAO_t iVG_GLVertexArrayNew();
 void  iVG_GLVertexArrayBind(VAO_t VAO);
-void  iVG_GLBufferData(uint32_t pointer, float* vertices, uint32_t arr_size, uint32_t flags, uint32_t stride);
+void  iVG_GLBufferData(u32 pointer, f32* vertices, u32 arr_size, u32 flags, u32 stride);
 void  iVG_GLDrawTriangles(VAO_t amount);
 void  iVG_GLVertexArrayDestroy(VAO_t VAO);
 void  iVG_GLModelRender(Model *VAO);
-uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* indices, uint32_t icount);
-void  iVG_GLRenderVerticesIndexed(Vertex* vertices, uint32_t vcound, uint32_t *indices, uint32_t icount);
-void  iVG_GLTransformSet(float* matrix);
+u32 iVG_GLLoadVerticesIndexed(Vertex* vertices, u32 vcount, u32* indices, u32 icount);
+void  iVG_GLRenderVerticesIndexed(Vertex* vertices, u32 vcound, u32 *indices, u32 icount);
+void  iVG_GLTransformSet(f32* matrix);
 
 
 void iVG_LightInit();
@@ -110,13 +125,13 @@ void iVG_GLShaderLightUpdate();
 void iVG_GLShaderProjectionUpdate();
 
 
-void iVG_GLUniformVec3Set(char* name, float* vec);
-void iVG_GLUniformFloatSet(char* name, float value);
+void iVG_GLUniformVec3Set(char* name, f32* vec);
+void iVG_GLUniformF32Set(char* name, f32 value);
 void iVG_GLUniformIntSet(char *name, int value);
 
 
 // INITIALIZATION AND CLOSING
-void VG_WindowOpen(char* name, float* size, uint32_t flags) {
+void VG_WindowOpen(char* name, f32* size, u32 flags) {
     VM2_Copy(window_size, size);
 
     glfwInit();
@@ -157,13 +172,14 @@ void VG_WindowOpen(char* name, float* size, uint32_t flags) {
 
     camera.fov = V_PI/2;
     
-    float mat[16] = VM44_IDENTITY;
+    f32 mat[16] = VM44_IDENTITY;
     iVG_GLTransformSet(mat);
-    iVG_ModelArenaInit(1024);
+    iVG_ModelArenaInit(64);
+    iVG_TextureArenaInit(64);
     iVG_LightInit();
 }
 
-bool VG_WindowShouldClose() {
+b8 VG_WindowShouldClose() {
     return glfwWindowShouldClose(window);
 }
 
@@ -180,27 +196,27 @@ const char* VG_WindowTitleGet() {
     return glfwGetWindowTitle(window);
 }
 
-void VG_VSyncSet(bool value) {
+void VG_VSyncSet(b8 value) {
     vsync = value;
     glfwSwapInterval(value);
 }
 
-bool VG_VSyncGet() {
+b8 VG_VSyncGet() {
     return vsync;
 }
 
 // BACKGROUND COLOR
-void VG_BackgroundColorSet(float* in) {
+void VG_BackgroundColorSet(f32* in) {
     VRGBA_Copy(background_color, in);
 }
 
-void VG_BackgroundColorGet(float* out) {
+void VG_BackgroundColorGet(f32* out) {
     VRGBA_Copy(out, background_color);
 }
 
 
 // WINDOW SIZE
-void VG_WindowSizeGet(float* out) {
+void VG_WindowSizeGet(f32* out) {
     VM2_Copy(out, window_size);
 }
 
@@ -211,42 +227,41 @@ void VG_WindowSizeUpdate() {
 
 
 // FPS
-double VG_FPSGet() {
+f64 VG_FPSGet() {
     return 1./VG_DeltaTimeGet();
 }
 
-double VG_DeltaTimeGet() {
+f64 VG_DeltaTimeGet() {
     return current_time - previous_time;
 }
 
-double VG_TimeGet() {
+f64 VG_TimeGet() {
     return current_time;
 }
 
 // CAMERA
-
-void VG_CameraPositionSet(float *pos) {
+void VG_CameraPositionSet(f32 *pos) {
     VM3_Copy(camera.position, pos);
 }
 
-void VG_CameraPositionGet(float *pos) {
+void VG_CameraPositionGet(f32 *pos) {
     VM3_Copy(pos, camera.position);
 }
 
-void VG_CameraRotationSet(float *rot) {
+void VG_CameraRotationSet(f32 *rot) {
     VM3_Copy(camera.rotation, rot);
 }
 
-void VG_CameraRotationGet(float *rot) {
+void VG_CameraRotationGet(f32 *rot) {
     VM3_Copy(rot, camera.rotation);
 }
 
-void VG_CameraForwardGet(float* out) {
+void VG_CameraForwardGet(f32* out) {
     VM3_Set(out, 0, 0, -1);
     VM3_RotateY(out, camera.rotation[1]);
 }
 
-void VG_CameraRightGet(float* out) {
+void VG_CameraRightGet(f32* out) {
     VM3_Set(out, 1, 0, 0);
     VM3_RotateY(out, camera.rotation[1]);
 }
@@ -262,21 +277,21 @@ void VG_CameraSet(Camera camera) {
 
 
 //LIGHT
-uint32_t VG_FlashLightCreate() {
+u32 VG_FlashLightCreate() {
     if (flashLightCount >= FLASH_LIGHT_MAX_COUNT - 1) {
 	fprintf(stderr, "Too many flashlights");
 	exit(1);
     }
     return flashLightCount++;
 }
-uint32_t VG_DirectLightCreate() {
+u32 VG_DirectLightCreate() {
     if (directLightCount >= DIRECT_LIGHT_MAX_COUNT - 1) {
 	fprintf(stderr, "Too many direct lights");
 	exit(1);
     }
     return directLightCount++;
 }
-uint32_t VG_PointLightCreate() {
+u32 VG_PointLightCreate() {
     if (pointLightCount >= POINT_LIGHT_MAX_COUNT - 1) {
 	fprintf(stderr, "Too many point lights");
 	exit(1);
@@ -284,15 +299,15 @@ uint32_t VG_PointLightCreate() {
     return pointLightCount++;
 }
 
-FlashLight*  VG_FlashLightGet(uint32_t light) {
+FlashLight*  VG_FlashLightGet(u32 light) {
     return flashLights + light;
 }
 
-DirectLight* VG_DirectLightGet(uint32_t light) {
+DirectLight* VG_DirectLightGet(u32 light) {
     return directLights + light;
 }
 
-PointLight*  VG_PointLightGet(uint32_t light) {
+PointLight*  VG_PointLightGet(u32 light) {
     return pointLights + light;
 }
 
@@ -301,6 +316,27 @@ void iVG_LightInit() {
     memset(pointLights,  0, sizeof(PointLight)*POINT_LIGHT_MAX_COUNT);
     memset(flashLights,  0, sizeof(FlashLight)*FLASH_LIGHT_MAX_COUNT);
 }
+
+
+// TEXTURE
+u32 VG_TextureNew(char* path) {
+    u32 texture_handle = iVG_TextureArenaBump();
+    u32* texture = iVG_TextureArenaPointerGet(texture_handle);
+    Texture texture_data = VTEX_LoadPPM(path);
+
+    u32 texture_gl;
+    glGenTextures(1, &texture_gl);
+    glBindTexture(GL_TEXTURE_2D, texture_gl);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, texture_data.width, texture_data.height,
+		 0, GL_RGB8, GL_UNSIGNED_BYTE, texture_data.data);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    *texture = texture_gl;
+    
+    return texture_handle;
+}
+
 
 // DRAWING MODES
 void VG_DrawingBegin() {
@@ -320,7 +356,7 @@ void VG_DrawingEnd() {
 
 
 // CLEARING SCREEN
-void VG_Clear(float* color) {
+void VG_Clear(f32* color) {
     glClearColor(color[0], color[1], color[2], color[3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
 }
@@ -330,27 +366,27 @@ void VG_BackgroundClear() {
 }
 
 // KEYS
-bool VG_KeyPressed(uint64_t key) {
+b8 VG_KeyPressed(u64 key) {
     return keys_just_pressed[key];
 }
 
-bool VG_KeyDown(uint64_t key) {
+b8 VG_KeyDown(u64 key) {
     return glfwGetKey(window, key) == GLFW_PRESS;
 }
 
 
 //MOUSE
-void VG_MouseDeltaGet(float* out) {
+void VG_MouseDeltaGet(f32* out) {
     VM2_Copy(out, mouse_delta);
 }
 
-void VG_MouseGet(float* out) {
+void VG_MouseGet(f32* out) {
     VM2_Copy(out, mouse_last);
 }
 
 // MODEL
-uint32_t VG_ModelNew(char* path, uint32_t shader) {
-    uint32_t model_handle = iVG_ModelArenaBump();
+u32 VG_ModelNew(char* path, u32 shader) {
+    u32 model_handle = iVG_ModelArenaBump();
     Model* model = iVG_ModelArenaPointerGet(model_handle);
     Mesh* mesh = malloc(sizeof(Mesh));
     VMESH_LoadObj(mesh, path);
@@ -362,9 +398,9 @@ uint32_t VG_ModelNew(char* path, uint32_t shader) {
     return model_handle;
 }
 
-void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float rotation[static 3], float size[static 3]) {
+void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3], f32 size[static 3]) {
     Model* model = iVG_ModelArenaPointerGet(model_handle);
-    float transform[16] = VM44_IDENTITY;
+    f32 transform[16] = VM44_IDENTITY;
     VM44_Scale(transform, size);
     VM44_Rotate(transform, rotation);
     VM44_Translate(transform, pos);
@@ -376,7 +412,7 @@ void VG_ModelDrawAt(uint32_t model_handle, float pos[static 3], float rotation[s
     iVG_GLModelRender(model);
 }
 
-void VG_ModelColorSet(uint32_t model_handle, float color[static 3]) {
+void VG_ModelColorSet(u32 model_handle, f32 color[static 3]) {
     Model* model = iVG_ModelArenaPointerGet(model_handle);
     VM3_Copy(model->color, color);
 }
@@ -395,7 +431,7 @@ void iVG_SetupOpengl() {
     glViewport(0, 0, window_size[0], window_size[1]);
 }
 
-void iVG_GLDrawTriangles(uint32_t amount) {
+void iVG_GLDrawTriangles(u32 amount) {
     glDrawArrays(GL_TRIANGLES, 0, 3*amount);
 }
 
@@ -418,19 +454,19 @@ void iVG_GLVertexArrayDestroy(VAO_t VAO) {
 }
 
 
-void iVG_GLBufferIndices(uint32_t* indices, uint32_t arr_len, uint32_t flags) {
-    uint32_t EBO;
+void iVG_GLBufferIndices(u32* indices, u32 arr_len, u32 flags) {
+    u32 EBO;
     glGenBuffers(1, &EBO);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, arr_len*sizeof(uint32_t), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, arr_len*sizeof(u32), indices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
-void iVG_GLBufferVertices(Vertex* vertices, uint32_t count) {
-    uint32_t VBO;
+void iVG_GLBufferVertices(Vertex* vertices, u32 count) {
+    u32 VBO;
     glGenBuffers(1, &VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -446,8 +482,8 @@ void iVG_GLBufferVertices(Vertex* vertices, uint32_t count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-uint32_t iVG_GLLoadVerticesIndexed(Vertex* vertices, uint32_t vcount, uint32_t* indices, uint32_t icount) {
-    uint32_t VAO = iVG_GLVertexArrayNew();
+u32 iVG_GLLoadVerticesIndexed(Vertex* vertices, u32 vcount, u32* indices, u32 icount) {
+    u32 VAO = iVG_GLVertexArrayNew();
     iVG_GLVertexArrayBind(VAO);
     
     iVG_GLBufferVertices(vertices, vcount);
@@ -473,7 +509,7 @@ char* iVG_FileLoadToString(const char* path) {
     }
 
     fseek(file, 0, SEEK_END);
-    uint32_t length = ftell(file);
+    u32 length = ftell(file);
     rewind(file);
 
     char* buffer = (char*)malloc(length + 1);
@@ -495,7 +531,7 @@ char* iVG_FileLoadToString(const char* path) {
 }
 
 // SHADERS
-void VG_ShaderUse(uint32_t shader) {
+void VG_ShaderUse(u32 shader) {
     if (shader_current == shader) return;
     shader_current = shader;
     glUseProgram(shader);
@@ -504,8 +540,8 @@ void VG_ShaderUse(uint32_t shader) {
     iVG_GLShaderProjectionUpdate();
 }
 
-uint32_t VG_ShaderLoad(const char* vertex_path, const char* fragment_path) {
-    uint32_t vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+u32 VG_ShaderLoad(const char* vertex_path, const char* fragment_path) {
+    u32 vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 
     char* vertex_shader_source = iVG_FileLoadToString(vertex_path);
     glShaderSource(vertex_shader, 1, (const char**)&vertex_shader_source, NULL);
@@ -522,7 +558,7 @@ uint32_t VG_ShaderLoad(const char* vertex_path, const char* fragment_path) {
 	exit(1);
     }    
 
-    uint32_t fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    u32 fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     char* fragment_shader_source = iVG_FileLoadToString(fragment_path);
     glShaderSource(fragment_shader, 1, (const char**)&fragment_shader_source, NULL);
     glCompileShader(fragment_shader);
@@ -573,23 +609,23 @@ void iVG_PollEvents() {
     glfwPollEvents();
 }
 
-void iVG_VertexColoredGet(float* point, float* color, float* out) {
+void iVG_VertexColoredGet(f32* point, f32* color, f32* out) {
     VM3_Copy(out, point);
     VRGBA_Copy(out+dims, color);
 }
 
-void  iVG_GLTransformSet(float* matrix) {
-    uint32_t transform_loc = glGetUniformLocation(shader_current, "model");
+void  iVG_GLTransformSet(f32* matrix) {
+    u32 transform_loc = glGetUniformLocation(shader_current, "model");
     glUniformMatrix4fv(transform_loc, 1, GL_TRUE, matrix);
 }
 
 void iVG_GLShaderProjectionUpdate() {
-    uint32_t projection_loc = glGetUniformLocation(shader_current, "projection");
+    u32 projection_loc = glGetUniformLocation(shader_current, "projection");
     glUniformMatrix4fv(projection_loc, 1, GL_TRUE, matrix_projection);
 }
 
 void iVG_GLPerspectiveUpdate() {
-    float size[2];
+    f32 size[2];
     VG_WindowSizeGet(size);
     VM44_ProjectionPerspective(matrix_projection, camera.fov, size[0]/size[1], 0.1, 100);
 }
@@ -598,30 +634,30 @@ void iVG_GLLightUpdate() {
     
 }
 
-void iVG_GLUniformVec3Set(char* name, float* vec) {
-    uint32_t loc = glGetUniformLocation(shader_current, name);
+void iVG_GLUniformVec3Set(char* name, f32* vec) {
+    u32 loc = glGetUniformLocation(shader_current, name);
     glUniform3fv(loc, 1, vec);
 }
 
 void iVG_GLUniformIntSet(char *name, int i) {
-    uint32_t loc = glGetUniformLocation(shader_current, name);
+    u32 loc = glGetUniformLocation(shader_current, name);
     glUniform1i(loc, i);
 }
 
 
-void iVG_GLUniformFloatSet(char *name, float f) {
-    uint32_t loc = glGetUniformLocation(shader_current, name);
+void iVG_GLUniformF32Set(char *name, f32 f) {
+    u32 loc = glGetUniformLocation(shader_current, name);
     glUniform1f(loc, f);
 }
 
 void iVG_GLShaderCameraUpdate() {
-    uint32_t view_loc = glGetUniformLocation(shader_current, "view");
+    u32 view_loc = glGetUniformLocation(shader_current, "view");
     iVG_GLUniformVec3Set("cameraPos", camera.position);
     glUniformMatrix4fv(view_loc, 1, GL_TRUE, matrix_view);
 }
 
 void iVG_GLCameraUpdate() {
-    float out[16];
+    f32 out[16];
     VM44_V3A3(camera.position, camera.rotation, matrix_view);
     VM44_InverseO(matrix_view, out);
     VM44_Copy(matrix_view, out);
@@ -629,19 +665,19 @@ void iVG_GLCameraUpdate() {
 
 void iVG_GLShaderLightUpdate() {
     char name[50];
-    for(uint32_t i = 0; i < DIRECT_LIGHT_MAX_COUNT; i++) {
+    for(u32 i = 0; i < DIRECT_LIGHT_MAX_COUNT; i++) {
 	snprintf(name, 49, "directLights[%d].direction", i);
 	iVG_GLUniformVec3Set(name, directLights[i].direction);
 	snprintf(name, 49, "directLights[%d].color", i);
 	iVG_GLUniformVec3Set(name, directLights[i].color);
     }
-    for (uint32_t i = 0; i < POINT_LIGHT_MAX_COUNT; i++) {
+    for (u32 i = 0; i < POINT_LIGHT_MAX_COUNT; i++) {
 	snprintf(name, 49, "pointLights[%d].position", i);
 	iVG_GLUniformVec3Set(name, pointLights[i].position);
 	snprintf(name, 49, "pointLights[%d].color", i);
 	iVG_GLUniformVec3Set(name, pointLights[i].color);
     }
-    for (uint32_t i = 0; i < FLASH_LIGHT_MAX_COUNT; i++) {
+    for (u32 i = 0; i < FLASH_LIGHT_MAX_COUNT; i++) {
 	snprintf(name, 49, "flashLights[%d].position", i);
 	iVG_GLUniformVec3Set(name, flashLights[i].position);
 	snprintf(name, 49, "flashLights[%d].direction", i);
@@ -649,9 +685,9 @@ void iVG_GLShaderLightUpdate() {
 	snprintf(name, 49, "flashLights[%d].color", i);
 	iVG_GLUniformVec3Set(name, flashLights[i].color);
 	snprintf(name, 49, "flashLights[%d].angle", i);
-	iVG_GLUniformFloatSet(name, flashLights[i].angle);
+	iVG_GLUniformF32Set(name, flashLights[i].angle);
 	snprintf(name, 49, "flashLights[%d].cutoff", i);
-	iVG_GLUniformFloatSet(name, flashLights[i].cutoff);
+	iVG_GLUniformF32Set(name, flashLights[i].cutoff);
     }
 }
 
@@ -665,10 +701,10 @@ void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
 }
 
 void iVG_KeysJustPressedClear() {
-    memset(keys_just_pressed, 0, 512*sizeof(bool));
+    memset(keys_just_pressed, 0, 512*sizeof(b8));
 }
 
-void iVG_MouseCallback(GLFWwindow* window, double x, double y) {
+void iVG_MouseCallback(GLFWwindow* window, f64 x, f64 y) {
  
     if (mouse_first) {
 	VM2_Set(mouse_last, x, y);
@@ -682,24 +718,24 @@ void iVG_MouseCallback(GLFWwindow* window, double x, double y) {
     VM2_Set(mouse_last, x, y);
 }
 
-void iVG_ModelArenaInit(uint32_t size) {
+void iVG_ModelArenaInit(u32 size) {
     model_arena.position = 1;
     if (size < 2) size = 2;
     model_arena.size = size;
-    model_arena.base = malloc(size*sizeof(uint32_t));
+    model_arena.base = malloc(size*sizeof(Model));
 }
 
-uint32_t iVG_ModelArenaBump() {
-    uint32_t temp = model_arena.position;
+u32 iVG_ModelArenaBump() {
+    u32 temp = model_arena.position;
     model_arena.position++;
     if (model_arena.position >= model_arena.size) {
 	model_arena.size *=2;
-	model_arena.base = realloc(model_arena.base, model_arena.size*sizeof(uint32_t));
+	model_arena.base = realloc(model_arena.base, model_arena.size*sizeof(Model));
     }
     return temp;
 }
 
-Model* iVG_ModelArenaPointerGet(uint32_t model_handle) {
+Model* iVG_ModelArenaPointerGet(u32 model_handle) {
     if (model_handle > model_arena.position) {
 	assert(false && "Model handle is not valid (too big)");
     }
@@ -708,4 +744,33 @@ Model* iVG_ModelArenaPointerGet(uint32_t model_handle) {
 
 void iVG_ModelArenaDestroy() {
     free(model_arena.base);
+}
+
+
+void iVG_TextureArenaInit(u32 size) {
+    texture_arena.position = 1;
+    if (size < 2) size = 2;
+    texture_arena.size = size;
+    texture_arena.base = malloc(size*sizeof(u32));
+}
+
+u32 iVG_TextureArenaBump() {
+    u32 temp = texture_arena.position;
+    texture_arena.position++;
+    if (texture_arena.position >= texture_arena.size) {
+	texture_arena.size *=2;
+	texture_arena.base = realloc(texture_arena.base, texture_arena.size*sizeof(u32));
+    }
+    return temp;
+}
+    
+u32* iVG_TextureArenaPointerGet(u32 texture_handle) {
+    if (texture_handle > texture_arena.position) {
+	assert(false && "Texture handle is not valid (too big)");
+    }
+    return texture_arena.base + texture_handle;
+}
+
+void iVG_TextureArenaDestroy() {
+    free(texture_arena.base);
 }
