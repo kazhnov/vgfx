@@ -87,7 +87,6 @@ typedef struct {
     f32 cutoff;
 } FlashLight;
 
-
 u32 VG_FlashLightCreate();
 u32 VG_DirectLightCreate();
 u32 VG_PointLightCreate();
