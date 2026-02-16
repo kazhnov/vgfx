@@ -102,6 +102,9 @@ PointLight*  VG_PointLightGet(u32 light);
 // TEXTURE
 u32 VG_TextureNew(char* path);
 
+void VG_TextureDefaultSet(u32 texture_handle);
+
+
 // DRAWING MODES
 void VG_DrawingBegin();
 

@@ -24,6 +24,8 @@ static f64 current_time;
 static f64 previous_time;
 static b8 vsync;
 static u32 shader_current;
+static u32 texture_default;
+static u32 texture_current;
 
 static Camera camera;
 
@@ -328,14 +330,20 @@ u32 VG_TextureNew(char* path) {
     u32 texture_gl;
     glGenTextures(1, &texture_gl);
     glBindTexture(GL_TEXTURE_2D, texture_gl);
+    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, texture_data.width, texture_data.height,
-		 0, GL_RGB8, GL_UNSIGNED_BYTE, texture_data.data);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_data.width, texture_data.height,
+		 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data.data);
     glBindTexture(GL_TEXTURE_2D, 0);
     *texture = texture_gl;
     
     return texture_handle;
+}
+
+void VG_TextureDefaultSet(u32 tex) {
+    texture_default = tex;
 }
 
 // DRAWING MODES
@@ -407,9 +415,13 @@ void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3],
     VM44_Translate(transform, pos);
 
     VG_ShaderUse(model->shader);
+    
     if (model->texture) {
 	iVG_TextureUse(model->texture);
+    } else {
+	iVG_TextureUse(texture_default);
     }
+    
     iVG_GLTransformSet(transform);
     iVG_GLUniformVec3Set("material.color", model->color);
     
@@ -780,6 +792,10 @@ void iVG_TextureArenaDestroy() {
 }
 
 void iVG_TextureUse(u32 texture_handle) {
+    if (texture_handle == texture_current) return;
+    texture_current = texture_handle;
     u32* texture = iVG_TextureArenaPointerGet(texture_handle);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, *texture);
+    iVG_GLUniformIntSet("main_texture", 0);
 }

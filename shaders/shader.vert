@@ -9,10 +9,12 @@ uniform mat4 projection;
 
 out vec3 bNormal;
 out vec3 bPos;
+out vec2 bTex;
 
 void main()
 {
     bPos = vec3(model*vec4(aPos, 1.0));
     bNormal = mat3(transpose(inverse(model))) * aNormal;
+    bTex = aTex;
     gl_Position = projection*view*model*vec4(aPos, 1.f);
 }

@@ -7,8 +7,10 @@
 
 static u32 model_bunny;
 static u32 model_teapot;
+static u32 model_floor;
 static u32 shader_default;
 static u32 shader_light;
+static u32 texture_default;
 static u32 flashlight;
 
 static f32 size[2] = {720.f, 720.f};
@@ -104,9 +106,14 @@ int main() {
 
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
+
+    texture_default = VG_TextureNew("include/vtex/textures/default.ppm");
+    u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
     
+    VG_TextureDefaultSet(texture_default);
     model_teapot = VG_ModelNew("models/teapot.obj", 0, shader_light);
-    model_bunny = VG_ModelNew("models/bunny.obj", 0, shader_default);
+    model_bunny =  VG_ModelNew("models/bunny_textured.obj", texture_bunny, shader_default);
+    model_floor =  VG_ModelNew("models/floor.obj", 0, shader_default);
 
     flashlight = VG_FlashLightCreate();
     
@@ -144,6 +151,8 @@ int main() {
 	GAME_BunniesDraw(bunnies, BUNNYC);
 	
 	VG_ModelDrawAt(sun.model, sun.pos, sun.rot, sun.size);
+
+	VG_ModelDrawAt(model_floor, (f32[]){0,-0.5,0}, (f32[]){0,0,0}, (f32[]){1, 1, 1});
 	
 	VG_DrawingEnd();
     }

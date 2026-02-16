@@ -2,8 +2,10 @@
 out vec4 FragColor;
 in vec3 bNormal;
 in vec3 bPos;
+in vec2 bTex;
 
 uniform vec3 cameraPos;
+uniform sampler2D main_texture;
 
 struct DirectLight {
     vec3 direction;
@@ -84,5 +86,6 @@ void main()
     }
     
     FragColor = vec4(result, 1.0);
+    FragColor *= texture(main_texture, bTex);
     FragColor = pow(FragColor, vec4(vec3(1./2.2), 1));
 }
