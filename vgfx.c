@@ -20,9 +20,10 @@
 static GLFWwindow *window = NULL;
 static f32 background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 static f32 window_size[2];
-static f64 current_time;
-static f64 previous_time;
+static f64 time_current;
+static f64 time_previous;
 static b8 vsync;
+static f64 time_delta_target;
 static u32 shader_current;
 static u32 texture_default;
 static u32 texture_current;
@@ -64,6 +65,7 @@ void iVG_MouseCallback(GLFWwindow* window, f64 x, f64 y);
 void iVG_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void iVG_InputUpdate();
 void iVG_PollEvents();
+b8 iVG_TimeDeltaTargetReached();
 
 char* iVG_FileLoadToString(const char* path);
 
@@ -171,7 +173,7 @@ void VG_WindowOpen(char* name, f32* size, u32 flags) {
     
     VG_VSyncSet(0);
     
-    current_time = glfwGetTime();
+    time_current = glfwGetTime();
 
     camera.fov = V_PI/2;
     
@@ -208,6 +210,10 @@ b8 VG_VSyncGet() {
     return vsync;
 }
 
+void VG_FPSMaxSet(u32 fps) {
+    time_delta_target = 1./fps;
+}
+
 // BACKGROUND COLOR
 void VG_BackgroundColorSet(f32* in) {
     VRGBA_Copy(background_color, in);
@@ -235,11 +241,11 @@ f64 VG_FPSGet() {
 }
 
 f64 VG_DeltaTimeGet() {
-    return current_time - previous_time;
+    return time_current - time_previous;
 }
 
 f64 VG_TimeGet() {
-    return current_time;
+    return time_current;
 }
 
 // CAMERA
@@ -353,13 +359,14 @@ void VG_DrawingBegin() {
     iVG_GLCameraUpdate();
     iVG_GLPerspectiveUpdate();
     VG_Clear(background_color);
-    previous_time = current_time;
-    current_time = glfwGetTime();
+    time_previous = time_current;
+    while(!iVG_TimeDeltaTargetReached())
+	;
+    
 }
 
 void VG_DrawingEnd() {
-    iVG_RenderFlush();
-    
+    iVG_RenderFlush();    
 }
 
 
@@ -798,4 +805,9 @@ void iVG_TextureUse(u32 texture_handle) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, *texture);
     iVG_GLUniformIntSet("main_texture", 0);
+}
+
+b8 iVG_TimeDeltaTargetReached() {
+    time_current = glfwGetTime();
+    return (time_current - time_previous) >= time_delta_target;
 }

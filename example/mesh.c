@@ -103,7 +103,7 @@ int main() {
     VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(false);
-
+    VG_FPSMaxSet(120);
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
 

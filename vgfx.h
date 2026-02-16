@@ -25,6 +25,7 @@ void VG_VSyncSet(b8);
 
 b8 VG_VSyncGet();
 
+void VG_FPSMaxSet(u32);
 
 // BACKGROUND COLOR
 void VG_BackgroundColorGet(f32* out);
