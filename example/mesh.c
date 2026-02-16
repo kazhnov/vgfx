@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 static u32 model_bunny;
-static u32 modeleapot;
+static u32 model_teapot;
 static u32 shader_default;
 static u32 shader_light;
 static u32 flashlight;
@@ -105,12 +105,12 @@ int main() {
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
     
-    modeleapot = VG_ModelNew("models/teapot.obj", shader_light);
-    model_bunny = VG_ModelNew("models/bunny.obj", shader_default);
+    model_teapot = VG_ModelNew("models/teapot.obj", 0, shader_light);
+    model_bunny = VG_ModelNew("models/bunny.obj", 0, shader_default);
 
     flashlight = VG_FlashLightCreate();
     
-    sun.model = modeleapot;
+    sun.model = model_teapot;
     VM3_Set(sun.pos, 0.0, 0.0, 0.0);
     VM3_Set(sun.size, 0.1, 0.1, 0.1);
     VM3_Set(sun.rot, 5, 5, 5);

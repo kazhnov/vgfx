@@ -99,6 +99,7 @@ void      iVG_TextureArenaInit(u32 size);
 u32  iVG_TextureArenaBump();
 u32* iVG_TextureArenaPointerGet(u32 model_handle);
 void      iVG_TextureArenaDestroy();
+void iVG_TextureUse(u32 texture);
 
 
 // BUFFERING DATA
@@ -337,7 +338,6 @@ u32 VG_TextureNew(char* path) {
     return texture_handle;
 }
 
-
 // DRAWING MODES
 void VG_DrawingBegin() {
     iVG_KeysJustPressedClear();
@@ -385,7 +385,7 @@ void VG_MouseGet(f32* out) {
 }
 
 // MODEL
-u32 VG_ModelNew(char* path, u32 shader) {
+u32 VG_ModelNew(char* path, u32 texture, u32 shader) {
     u32 model_handle = iVG_ModelArenaBump();
     Model* model = iVG_ModelArenaPointerGet(model_handle);
     Mesh* mesh = malloc(sizeof(Mesh));
@@ -394,6 +394,7 @@ u32 VG_ModelNew(char* path, u32 shader) {
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
     model->shader = shader;
+    model->texture = texture;
     VM3_Set(model->color, 1, 1, 1);
     return model_handle;
 }
@@ -406,6 +407,9 @@ void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3],
     VM44_Translate(transform, pos);
 
     VG_ShaderUse(model->shader);
+    if (model->texture) {
+	iVG_TextureUse(model->texture);
+    }
     iVG_GLTransformSet(transform);
     iVG_GLUniformVec3Set("material.color", model->color);
     
@@ -773,4 +777,9 @@ u32* iVG_TextureArenaPointerGet(u32 texture_handle) {
 
 void iVG_TextureArenaDestroy() {
     free(texture_arena.base);
+}
+
+void iVG_TextureUse(u32 texture_handle) {
+    u32* texture = iVG_TextureArenaPointerGet(texture_handle);
+    glBindTexture(GL_TEXTURE_2D, *texture);
 }
