@@ -6,7 +6,8 @@ nix:
 
 subs:
 	mkdir -p lib
-	git submodule foreach git pull origin main
+	git submodule update --init --recursive
+	git submodule foreach --recursive git pull origin main
 	(cd include/vmesh && make build -B)
 	(cd include/vtex && make build -B)
 
