@@ -11,7 +11,7 @@
 #include <string.h>
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
 
-#if 0
+#if 1
 #define iVG_Log(a) printf(a "\n")
 #else
 #define iVG_Log(a)
@@ -82,7 +82,8 @@ typedef struct {
     
     u32 instance_count;
     u32 instance_capacity;
-    u32 instanceVBO;
+    u32 instance_vbo;
+    u32 instance_vbo_capacity;
     InstanceData *instances;
 } Model;
 
@@ -430,6 +431,9 @@ u32 VG_ModelNew(char* path, u32 texture, u32 shader) {
     model->instance_count = 0;
     model->instance_capacity = 0;
     model->instances = NULL;
+
+    model->instance_vbo_capacity = 0;
+    glGenBuffers(1, &model->instance_vbo);
     
     return model_handle;
 }
@@ -565,9 +569,9 @@ void iVG_GLModelRender(Model *model) {
 }
 
 u32 iVG_GLInstancesBuffer(InstanceData* instances, u32 instance_count) {
-    u32 instanceVBO;
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    u32 instance_vbo;
+    glGenBuffers(1, &instance_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData)*instance_count, instances, GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(3);
@@ -584,24 +588,27 @@ u32 iVG_GLInstancesBuffer(InstanceData* instances, u32 instance_count) {
     glVertexAttribDivisor(5, 1);
     glVertexAttribDivisor(6, 1);
 
-    return instanceVBO;
+    return instance_vbo;
 }
 
 void iVG_GLModelRenderInstances(Model *model) {
     iVG_GLVertexArrayBind(model->VAO);
     
-    glDisableVertexAttribArray(3);
-    glDisableVertexAttribArray(4);
-    glDisableVertexAttribArray(5);
-    glDisableVertexAttribArray(6);
+    if (model->instance_count > model->instance_vbo_capacity) {
+	glDeleteBuffers(1, &model->instance_vbo);
+	model->instance_vbo = iVG_GLInstancesBuffer(model->instances, model->instance_count);
+	model->instance_vbo_capacity = model->instance_count;
+	iVG_Log("New instance VBO");
+    } else {
+	glBindBuffer(GL_ARRAY_BUFFER, model->instance_vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(InstanceData)*model->instance_count, model->instances);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
     
-    u32 instanceVBO = iVG_GLInstancesBuffer(model->instances, model->instance_count);
-
     // Buffering instance data
     glDrawElementsInstanced(GL_TRIANGLES, model->index_count, GL_UNSIGNED_INT, NULL, model->instance_count);
     
     iVG_GLVertexArrayBind(0);
-    glDeleteBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, 0);    
 }
 

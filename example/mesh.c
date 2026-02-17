@@ -4,6 +4,7 @@
 #include "../vgfx.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 static u32 model_bunny;
 static u32 model_teapot;
@@ -50,6 +51,10 @@ void GAME_HandleInput(Camera* camera) {
     if (VG_KeyDown(VG_KEY_A)) {
 	VM3_Subtract(camera->position, right_scaled);
     }
+    if (VG_KeyDown(VG_KEY_SPACE)) {
+	camera->position[1] += dt;
+    }
+    
     if (VG_KeyPressed(VG_KEY_SPACE)) {
 	printf("jump!\n");
     }
@@ -65,7 +70,7 @@ void GAME_BunniesInit(Object bunnies[], u32 count) {
     for (u32 i = 0; i < count; i++) {
 	bunnies[i].model = model_bunny;
 	VM3_Set(bunnies[i].size, 0.5f, 0.5f, 0.5f);
-	VM3_Set(bunnies[i].pos,  i%10, -0.5f, i/10  );
+	VM3_Set(bunnies[i].pos,  i%(u32)sqrt(count), -0.5f, i/(u32)sqrt(count)  );
 	VM3_Set(bunnies[i].rot, 0, 0, 0);
     }
 }
@@ -109,11 +114,11 @@ int main() {
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
 
     texture_default = VG_TextureNew("include/vtex/textures/default.ppm");
-//    u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
+    u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
     
     VG_TextureDefaultSet(texture_default);
     model_teapot = VG_ModelNew("models/teapot.obj", 0, shader_light);
-    model_bunny =  VG_ModelNew("models/bunny_textured.obj", 0, shader_default);
+    model_bunny =  VG_ModelNew("models/bunny_textured.obj", texture_bunny, shader_default);
     model_floor =  VG_ModelNew("models/floor.obj", 0, shader_default);
 
     flashlight = VG_FlashLightCreate();
@@ -128,7 +133,7 @@ int main() {
     VM3_Copy(direct_light->color, VRGB_YELLOW);
     VM3_Set(direct_light->direction, 0, 1, 0);
     
-    const u32 BUNNYC = 100;
+    const u32 BUNNYC = 1000;
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
@@ -136,7 +141,7 @@ int main() {
 
     sunlight = VG_PointLightCreate();
     
-    char fpsstring[100];
+    char fpsstring[1000];
 
     Camera* camera = VG_CameraGet();
     while (!VG_WindowShouldClose()) {
