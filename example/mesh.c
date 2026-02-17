@@ -65,7 +65,8 @@ void GAME_BunniesInit(Object bunnies[], u32 count) {
     for (u32 i = 0; i < count; i++) {
 	bunnies[i].model = model_bunny;
 	VM3_Set(bunnies[i].size, 0.5f, 0.5f, 0.5f);
-	VM3_Set(bunnies[i].pos,  i%10, 0.f, i/10  );
+	VM3_Set(bunnies[i].pos,  i%10, -0.5f, i/10  );
+	VM3_Set(bunnies[i].rot, 0, 0, 0);
     }
 }
 
@@ -103,16 +104,16 @@ int main() {
     VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
     VG_VSyncSet(false);
-    VG_FPSMaxSet(120);
+//    VG_FPSMaxSet(60);
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
 
     texture_default = VG_TextureNew("include/vtex/textures/default.ppm");
-    u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
+//    u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
     
     VG_TextureDefaultSet(texture_default);
     model_teapot = VG_ModelNew("models/teapot.obj", 0, shader_light);
-    model_bunny =  VG_ModelNew("models/bunny_textured.obj", texture_bunny, shader_default);
+    model_bunny =  VG_ModelNew("models/bunny_textured.obj", 0, shader_default);
     model_floor =  VG_ModelNew("models/floor.obj", 0, shader_default);
 
     flashlight = VG_FlashLightCreate();
@@ -148,10 +149,9 @@ int main() {
 	VG_DrawingBegin();
 	GAME_HandleInput(camera);
 
-	GAME_BunniesDraw(bunnies, BUNNYC);
-	
-	VG_ModelDrawAt(sun.model, sun.pos, sun.rot, sun.size);
 
+	VG_ModelDrawAt(sun.model, sun.pos, sun.rot, sun.size);
+	GAME_BunniesDraw(bunnies, BUNNYC);
 	VG_ModelDrawAt(model_floor, (f32[]){0,-0.5,0}, (f32[]){0,0,0}, (f32[]){1, 1, 1});
 	
 	VG_DrawingEnd();

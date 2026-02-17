@@ -132,6 +132,8 @@ void VG_MouseGet(f32* out);
 
 // MESHES
 u32 VG_ModelNew(char* path, u32 texture, u32 shader);
+void VG_ModelInstancesDraw(u32 model_handle);
+void VG_ModelInstancesClear(u32 model_handle);
 void     VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3], f32 size[static 3]);
 void     VG_ModelColorSet(u32 model_handle, f32 color[static 3]);
 

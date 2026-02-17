@@ -46,7 +46,6 @@ const u32 normals = 3;
 const u32 uvs = 2;
 const u32 vert_size = dims + normals + uvs;
 
-
 #define POINT_LIGHT_MAX_COUNT  8
 #define DIRECT_LIGHT_MAX_COUNT 8
 #define FLASH_LIGHT_MAX_COUNT  2
@@ -69,13 +68,25 @@ b8 iVG_TimeDeltaTargetReached();
 
 char* iVG_FileLoadToString(const char* path);
 
+
+typedef struct {
+    f32 transform[16];
+} InstanceData;
+
 typedef struct {
     u32 VAO;
     u32 index_count;
     u32 shader;
     f32 color[3];
     u32 texture;
+    
+    u32 instance_count;
+    u32 instance_capacity;
+    u32 instanceVBO;
+    InstanceData *instances;
 } Model;
+
+void iVG_ModelInstancesClear(Model* model);
 
 // MODELARENA
 typedef struct {
@@ -87,7 +98,7 @@ typedef struct {
 static ModelArena model_arena;
 
 void     iVG_ModelArenaInit(u32 size);
-u32 iVG_ModelArenaBump();
+u32      iVG_ModelArenaBump();
 Model*   iVG_ModelArenaPointerGet(u32 model_handle);
 void     iVG_ModelArenaDestroy();
 
@@ -115,9 +126,10 @@ void  iVG_GLBufferData(u32 pointer, f32* vertices, u32 arr_size, u32 flags, u32 
 void  iVG_GLDrawTriangles(VAO_t amount);
 void  iVG_GLVertexArrayDestroy(VAO_t VAO);
 void  iVG_GLModelRender(Model *VAO);
-u32 iVG_GLLoadVerticesIndexed(Vertex* vertices, u32 vcount, u32* indices, u32 icount);
+void  iVG_GLModelRenderInstances(Model *model);
+u32   iVG_GLLoadVerticesIndexed(Vertex* vertices, u32 vcount, u32* indices, u32 icount);
+u32   iVG_GLInstancesBuffer(InstanceData* instances, u32 instance_count);
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, u32 vcound, u32 *indices, u32 icount);
-void  iVG_GLTransformSet(f32* matrix);
 
 
 void iVG_LightInit();
@@ -177,8 +189,6 @@ void VG_WindowOpen(char* name, f32* size, u32 flags) {
 
     camera.fov = V_PI/2;
     
-    f32 mat[16] = VM44_IDENTITY;
-    iVG_GLTransformSet(mat);
     iVG_ModelArenaInit(64);
     iVG_TextureArenaInit(64);
     iVG_LightInit();
@@ -366,7 +376,11 @@ void VG_DrawingBegin() {
 }
 
 void VG_DrawingEnd() {
-    iVG_RenderFlush();    
+    for (uint32_t i = 1; i < model_arena.position; i++) {
+	VG_ModelInstancesDraw(i);
+	VG_ModelInstancesClear(i);
+    }
+    iVG_RenderFlush();
 }
 
 
@@ -408,19 +422,21 @@ u32 VG_ModelNew(char* path, u32 texture, u32 shader) {
     model->VAO = iVG_GLLoadVerticesIndexed(mesh->vertices, mesh->vertex_count,
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
+    VMESH_Destroy(mesh);
     model->shader = shader;
     model->texture = texture;
     VM3_Set(model->color, 1, 1, 1);
+    
+    model->instance_count = 0;
+    model->instance_capacity = 0;
+    model->instances = NULL;
+    
     return model_handle;
 }
 
-void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3], f32 size[static 3]) {
+void VG_ModelInstancesDraw(u32 model_handle) {
     Model* model = iVG_ModelArenaPointerGet(model_handle);
-    f32 transform[16] = VM44_IDENTITY;
-    VM44_Scale(transform, size);
-    VM44_Rotate(transform, rotation);
-    VM44_Translate(transform, pos);
-
+    
     VG_ShaderUse(model->shader);
     
     if (model->texture) {
@@ -429,10 +445,34 @@ void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3],
 	iVG_TextureUse(texture_default);
     }
     
-    iVG_GLTransformSet(transform);
     iVG_GLUniformVec3Set("material.color", model->color);
     
-    iVG_GLModelRender(model);
+    iVG_GLModelRenderInstances(model);
+}
+
+void VG_ModelInstancesClear(u32 model_handle) {
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    iVG_ModelInstancesClear(model);
+}
+
+void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3], f32 size[static 3]) {
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    if (model->instance_capacity == 0) {
+	model->instances = malloc(sizeof(InstanceData));
+	model->instance_capacity = 1;
+    }
+    
+    if (model->instance_count+1 > model->instance_capacity) {
+	model->instance_capacity *= 2;
+	model->instances = realloc(model->instances, sizeof(InstanceData)*model->instance_capacity);
+    }
+    InstanceData* instance_current = model->instances + model->instance_count;
+    VM44_Copy(instance_current->transform, (f32[])VM44_IDENTITY);
+    VM44_Rotate(instance_current->transform, rotation);
+    VM44_Scale(instance_current->transform, size);
+    VM44_Translate(instance_current->transform, pos);
+    VM44_Transpose(instance_current->transform);
+    model->instance_count++;
 }
 
 void VG_ModelColorSet(u32 model_handle, f32 color[static 3]) {
@@ -522,6 +562,47 @@ void iVG_GLModelRender(Model *model) {
     glDrawElements(GL_TRIANGLES, model->index_count, GL_UNSIGNED_INT, NULL);
 
     iVG_GLVertexArrayBind(0);
+}
+
+u32 iVG_GLInstancesBuffer(InstanceData* instances, u32 instance_count) {
+    u32 instanceVBO;
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(InstanceData)*instance_count, instances, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(0));    
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(4*sizeof(f32)));
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(8*sizeof(f32)));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(12*sizeof(f32)));
+    
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+
+    return instanceVBO;
+}
+
+void iVG_GLModelRenderInstances(Model *model) {
+    iVG_GLVertexArrayBind(model->VAO);
+    
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(4);
+    glDisableVertexAttribArray(5);
+    glDisableVertexAttribArray(6);
+    
+    u32 instanceVBO = iVG_GLInstancesBuffer(model->instances, model->instance_count);
+
+    // Buffering instance data
+    glDrawElementsInstanced(GL_TRIANGLES, model->index_count, GL_UNSIGNED_INT, NULL, model->instance_count);
+    
+    iVG_GLVertexArrayBind(0);
+    glDeleteBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);    
 }
 
 char* iVG_FileLoadToString(const char* path) {
@@ -635,11 +716,6 @@ void iVG_PollEvents() {
 void iVG_VertexColoredGet(f32* point, f32* color, f32* out) {
     VM3_Copy(out, point);
     VRGBA_Copy(out+dims, color);
-}
-
-void  iVG_GLTransformSet(f32* matrix) {
-    u32 transform_loc = glGetUniformLocation(shader_current, "model");
-    glUniformMatrix4fv(transform_loc, 1, GL_TRUE, matrix);
 }
 
 void iVG_GLShaderProjectionUpdate() {
@@ -810,4 +886,12 @@ void iVG_TextureUse(u32 texture_handle) {
 b8 iVG_TimeDeltaTargetReached() {
     time_current = glfwGetTime();
     return (time_current - time_previous) >= time_delta_target;
+}
+
+
+void iVG_ModelInstancesClear(Model* model) {
+    free(model->instances);
+    model->instance_count = 0;
+    model->instance_capacity = 0;
+    model->instances = NULL;
 }
