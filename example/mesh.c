@@ -54,9 +54,8 @@ void GAME_HandleInput(Camera* camera) {
     if (VG_KeyDown(VG_KEY_SPACE)) {
 	camera->position[1] += dt;
     }
-    
-    if (VG_KeyPressed(VG_KEY_SPACE)) {
-	printf("jump!\n");
+    if (VG_KeyDown(VG_KEY_LEFT_SHIFT)) {
+	camera->position[1] -= dt;
     }
     
     f32 mouse_delta[2];

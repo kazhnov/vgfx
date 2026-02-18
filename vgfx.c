@@ -68,9 +68,9 @@ b8 iVG_TimeDeltaTargetReached();
 
 char* iVG_FileLoadToString(const char* path);
 
-
 typedef struct {
     f32 transform[16];
+    f32 transform_inverse[16];
 } InstanceData;
 
 typedef struct {
@@ -476,6 +476,8 @@ void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3],
     VM44_Scale(instance_current->transform, size);
     VM44_Translate(instance_current->transform, pos);
     VM44_Transpose(instance_current->transform);
+    VM44_Copy(instance_current->transform_inverse, instance_current->transform);
+    VM44_Inverse(instance_current->transform_inverse);
     model->instance_count++;
 }
 
@@ -582,11 +584,25 @@ u32 iVG_GLInstancesBuffer(InstanceData* instances, u32 instance_count) {
     glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(8*sizeof(f32)));
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(12*sizeof(f32)));
+
+
+    glEnableVertexAttribArray(7);
+    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(16*sizeof(f32)));    
+    glEnableVertexAttribArray(8);
+    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(20*sizeof(f32)));
+    glEnableVertexAttribArray(9);
+    glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(24*sizeof(f32)));
+    glEnableVertexAttribArray(10);
+    glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(InstanceData), (void*)(28*sizeof(f32)));
     
     glVertexAttribDivisor(3, 1);
     glVertexAttribDivisor(4, 1);
     glVertexAttribDivisor(5, 1);
     glVertexAttribDivisor(6, 1);
+    glVertexAttribDivisor(7, 1);
+    glVertexAttribDivisor(8, 1);
+    glVertexAttribDivisor(9, 1);
+    glVertexAttribDivisor(10, 1);
 
     return instance_vbo;
 }
