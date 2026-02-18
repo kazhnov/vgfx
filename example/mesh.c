@@ -132,7 +132,7 @@ int main() {
     VM3_Copy(direct_light->color, VRGB_YELLOW);
     VM3_Set(direct_light->direction, 0, 1, 0);
     
-    const u32 BUNNYC = 100;
+    const u32 BUNNYC = 1000;
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
