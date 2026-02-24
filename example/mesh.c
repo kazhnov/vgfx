@@ -54,9 +54,8 @@ void GAME_HandleInput(Camera* camera) {
     if (VG_KeyDown(VG_KEY_SPACE)) {
 	camera->position[1] += dt;
     }
-    
-    if (VG_KeyPressed(VG_KEY_SPACE)) {
-	printf("jump!\n");
+    if (VG_KeyDown(VG_KEY_LEFT_SHIFT)) {
+	camera->position[1] -= dt;
     }
     
     f32 mouse_delta[2];
@@ -70,7 +69,7 @@ void GAME_BunniesInit(Object bunnies[], u32 count) {
     for (u32 i = 0; i < count; i++) {
 	bunnies[i].model = model_bunny;
 	VM3_Set(bunnies[i].size, 0.5f, 0.5f, 0.5f);
-	VM3_Set(bunnies[i].pos,  i%(u32)sqrt(count), -0.5f, i/(u32)sqrt(count)  );
+	VM3_Set(bunnies[i].pos,  i%(u32)sqrt(count), 0, i/(u32)sqrt(count)  );
 	VM3_Set(bunnies[i].rot, 0, 0, 0);
     }
 }
@@ -117,8 +116,8 @@ int main() {
     u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
     
     VG_TextureDefaultSet(texture_default);
+    model_bunny =  VG_ModelNew("models/box.obj", texture_bunny, shader_default);
     model_teapot = VG_ModelNew("models/teapot.obj", 0, shader_light);
-    model_bunny =  VG_ModelNew("models/bunny_textured.obj", texture_bunny, shader_default);
     model_floor =  VG_ModelNew("models/floor.obj", 0, shader_default);
 
     flashlight = VG_FlashLightCreate();

@@ -4,11 +4,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "include/vmesh/vmesh.h"
+#include "include/vshape/vshape.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+
 #define ARRLEN(x) ((sizeof(x))/(sizeof(x[0])))
 
 #if 1
@@ -29,6 +31,8 @@ static u32 texture_default;
 static u32 texture_current;
 
 static Camera camera;
+static VShape camera_frustrum;
+static f32 render_distance = 100.0f;
 
 static f32 matrix_view[16];
 static f32 matrix_projection[16];
@@ -68,7 +72,6 @@ b8 iVG_TimeDeltaTargetReached();
 
 char* iVG_FileLoadToString(const char* path);
 
-
 typedef struct {
     f32 transform[16];
 } InstanceData;
@@ -78,12 +81,15 @@ typedef struct {
     u32 index_count;
     u32 shader;
     f32 color[3];
+    f32 box_size[3];
+    f32 box_center[3];
     u32 texture;
     
     u32 instance_count;
     u32 instance_capacity;
     u32 instance_vbo;
     u32 instance_vbo_capacity;
+
     InstanceData *instances;
 } Model;
 
@@ -131,7 +137,6 @@ void  iVG_GLModelRenderInstances(Model *model);
 u32   iVG_GLLoadVerticesIndexed(Vertex* vertices, u32 vcount, u32* indices, u32 icount);
 u32   iVG_GLInstancesBuffer(InstanceData* instances, u32 instance_count);
 void  iVG_GLRenderVerticesIndexed(Vertex* vertices, u32 vcound, u32 *indices, u32 icount);
-
 
 void iVG_LightInit();
 
@@ -423,6 +428,15 @@ u32 VG_ModelNew(char* path, u32 texture, u32 shader) {
     model->VAO = iVG_GLLoadVerticesIndexed(mesh->vertices, mesh->vertex_count,
 				     mesh->indices, mesh->index_count);
     model->index_count = mesh->index_count;
+
+    VShape box = VSHAPE_BoxFromVertices(mesh->vertices,
+					mesh->vertex_count,
+					sizeof(Vertex),
+					offsetof(Vertex, pos));
+
+    VM3_Copy(model->box_size, box.size);
+    VM3_Copy(model->box_center, box.center);
+    
     VMESH_Destroy(mesh);
     model->shader = shader;
     model->texture = texture;
@@ -461,6 +475,14 @@ void VG_ModelInstancesClear(u32 model_handle) {
 
 void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3], f32 size[static 3]) {
     Model* model = iVG_ModelArenaPointerGet(model_handle);
+    
+    f32 box_center[3]; f32 box_size[3];
+    VM3_AddO(model->box_center, pos, box_center);
+    VM3_MultiplyO(model->box_size, size, box_size);
+    VShape instance_box = VSHAPE_BoxCreate(box_center, box_size, rotation);
+    if (!VSHAPE_Collide(camera_frustrum, instance_box)) return;
+    
+    
     if (model->instance_capacity == 0) {
 	model->instances = malloc(sizeof(InstanceData));
 	model->instance_capacity = 1;
@@ -733,7 +755,9 @@ void iVG_GLShaderProjectionUpdate() {
 void iVG_GLPerspectiveUpdate() {
     f32 size[2];
     VG_WindowSizeGet(size);
-    VM44_ProjectionPerspective(matrix_projection, camera.fov, size[0]/size[1], 0.1, 100);
+    VM44_ProjectionPerspective(matrix_projection, camera.fov, size[0]/size[1], 0.1, render_distance);
+    camera_frustrum = VSHAPE_FrustrumCreate(camera.position, camera.rotation, render_distance, camera.fov, size[0]/size[1]);
+
 }
 
 void iVG_GLLightUpdate() {

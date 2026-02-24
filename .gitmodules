@@ -10,3 +10,6 @@
 [submodule "include/vtex"]
 	path = include/vtex
 	url = https://github.com/kazhnov/vtex
+[submodule "include/vshape"]
+	path = include/vshape
+	url = https://github.com/kazhnov/vshape
