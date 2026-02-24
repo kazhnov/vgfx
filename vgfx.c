@@ -3,7 +3,6 @@
 #include "include/vtex/vtex.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "include/vmesh/vmesh.h"
 #include "include/vshape/vshape.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -421,23 +420,28 @@ void VG_MouseGet(f32* out) {
 
 // MODEL
 u32 VG_ModelNew(char* path, u32 texture, u32 shader) {
-    u32 model_handle = iVG_ModelArenaBump();
-    Model* model = iVG_ModelArenaPointerGet(model_handle);
     Mesh* mesh = malloc(sizeof(Mesh));
     VMESH_LoadObj(mesh, path);
-    model->VAO = iVG_GLLoadVerticesIndexed(mesh->vertices, mesh->vertex_count,
-				     mesh->indices, mesh->index_count);
-    model->index_count = mesh->index_count;
+    u32 id = VG_ModelFromVertices(mesh->vertices, mesh->vertex_count, mesh->indices, mesh->index_count, texture, shader);
+    VMESH_Destroy(mesh);
+    return id;
+}
+u32 VG_ModelFromVertices(Vertex* vertices, u32 vertex_count, u32* indices, u32 index_count, u32 texture, u32 shader) {
+    u32 model_handle = iVG_ModelArenaBump();
+    Model* model = iVG_ModelArenaPointerGet(model_handle);
+    model->VAO = iVG_GLLoadVerticesIndexed(vertices, vertex_count,
+				     indices, index_count);
+    model->index_count = index_count;
 
-    VShape box = VSHAPE_BoxFromVertices(mesh->vertices,
-					mesh->vertex_count,
+    
+    VShape box = VSHAPE_BoxFromVertices(vertices,
+					vertex_count,
 					sizeof(Vertex),
 					offsetof(Vertex, pos));
 
     VM3_Copy(model->box_size, box.size);
     VM3_Copy(model->box_center, box.center);
     
-    VMESH_Destroy(mesh);
     model->shader = shader;
     model->texture = texture;
     VM3_Set(model->color, 1, 1, 1);

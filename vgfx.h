@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "include/vmath/vmath.h"
+#include "include/vmesh/vmesh.h"
 #define VG_KEY_SPACE 32
 #define VG_KEY_LEFT_SHIFT 340
 #define VG_KEY_W 87
@@ -132,6 +133,7 @@ void VG_MouseGet(f32* out);
 
 // MESHES
 u32 VG_ModelNew(char* path, u32 texture, u32 shader);
+u32 VG_ModelFromVertices(Vertex* vertices, u32 vertex_count, u32* indicies, u32 index_count, u32 texture, u32 shader);
 void VG_ModelInstancesDraw(u32 model_handle);
 void VG_ModelInstancesClear(u32 model_handle);
 void     VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3], f32 size[static 3]);
