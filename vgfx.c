@@ -485,7 +485,6 @@ void VG_ModelDrawAt(u32 model_handle, f32 pos[static 3], f32 rotation[static 3],
     VShape instance_box = VSHAPE_BoxCreate(box_center, box_size, rotation);
     if (!VSHAPE_Collide(camera_frustrum, instance_box)) return;
     
-    
     if (model->instance_capacity == 0) {
 	model->instances = malloc(sizeof(InstanceData));
 	model->instance_capacity = 1;

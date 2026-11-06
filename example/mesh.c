@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 static u32 model_bunny;
 static u32 model_teapot;
@@ -107,7 +108,7 @@ void GAME_LightUpdate(Camera* camera) {
 int main() {
     VG_WindowOpen("Example: Meshes", size, 0);
     VG_BackgroundColorSet(VRGBA_BLACK);
-    VG_VSyncSet(false);
+    VG_VSyncSet(true);
 //    VG_FPSMaxSet(60);
     shader_light = VG_ShaderLoad("shaders/shader.vert", "shaders/light.frag");
     shader_default = VG_ShaderLoad("shaders/shader.vert", "shaders/shader.frag");
@@ -116,7 +117,7 @@ int main() {
     u32 texture_bunny = VG_TextureNew("include/vtex/textures/input.ppm");
     
     VG_TextureDefaultSet(texture_default);
-    model_bunny =  VG_ModelNew("models/box.obj", texture_bunny, shader_default);
+    model_bunny =  VG_ModelNew("models/bunny_textured.obj", texture_bunny, shader_default);
     model_teapot = VG_ModelNew("models/teapot.obj", 0, shader_light);
     model_floor =  VG_ModelNew("models/floor.obj", 0, shader_default);
 
@@ -136,6 +137,7 @@ int main() {
     Object bunnies[BUNNYC];
     GAME_BunniesInit(bunnies, BUNNYC);
 
+    
     VG_BackgroundColorSet(VRGBA_BLACK);
 
     sunlight = VG_PointLightCreate();
